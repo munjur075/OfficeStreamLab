@@ -12,6 +12,18 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+# for cloudinary
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+cloudinary.config( 
+  cloud_name = "dubsxif8w",
+  api_key = "344857482292291",
+  api_secret = "w_HqV196OdrQZYs7LGzQUFFOsBc",
+  secure = True
+)
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,11 +57,12 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
 
     # For Upload cloudinary
-    # 'cloudinary',
-    # 'cloudinary_storage',
+    'cloudinary',
+    'cloudinary_storage',
 
     # Custom apps
     'accounts',
+    'movie',
 ]
 
 # CustomUser Model
@@ -177,10 +190,10 @@ CSRF_TRUSTED_ORIGINS = ['https://equal-evidently-terrier.ngrok-free.app']
 
 #---------
 # Cloudinary credentials
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': 'dubsxif8w',
-#     'API_KEY': '344857482292291',
-#     'API_SECRET': 'w_HqV196OdrQZYs7LGzQUFFOsBc',
-# }
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dubsxif8w',
+    'API_KEY': '344857482292291',
+    'API_SECRET': 'w_HqV196OdrQZYs7LGzQUFFOsBc',
+}
 
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
