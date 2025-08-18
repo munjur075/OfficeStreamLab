@@ -7,9 +7,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404, render
-
+from rest_framework.permissions import IsAuthenticated
 from .models import Film, Genre
-from .serializers import FilmSerializer
+from .serializers import FilmSerializer, FilmListSerializer
 
 
 class FilmUploadView(APIView):
@@ -137,3 +137,36 @@ def film_detail(request, film_id):
     """
     film = get_object_or_404(Film, id=film_id)
     return render(request, "movie/film_detail.html", {"film": film})
+
+class AllFlimListView(APIView):
+    """
+    Returns a list of films with status 'published', newest first.
+    """
+    def get(self, request):
+        films = Film.objects.filter(status__iexact='published').order_by('-created_at')
+        print(films)  # Will show queryset in console
+        serializer = FilmListSerializer(films, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class FilmDetailView(APIView):
+    """
+    Returns details of a specific film by its ID (only if review).
+    """
+    def get(self, request, film_id):
+        # Get film with status 'published' (case-insensitive)
+        film = get_object_or_404(Film, id=film_id, status__iexact='review')
+        serializer = FilmSerializer(film)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+
+#
+
+    
+
+# class TrendingMoviesView(APIView):
+#     def get(self, request):
+#         movies = Movie.objects.order_by('-trending_score')[:10]
+#         data = [{"title": m.title, "release_date": m.release_date} for m in movies]
+#         return Response(data)
