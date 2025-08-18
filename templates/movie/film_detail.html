@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ film.title }} - Watch Film</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        p {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        #video-player {
+            width: 100%;
+            max-height: 500px;
+            background: #000;
+            margin-top: 20px;
+        }
+        .resolution-buttons {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>{{ film.title }} ({{ film.year }})</h1>
+    <p>{{ film.logline }}</p>
+
+    <!-- Video source buttons -->
+    <button onclick="playVideo('{{ film.trailer_hls_url }}')">Play Trailer</button>
+    <button onclick="playVideo('{{ film.film_hls_url }}')">Play Full Film</button>
+
+    <!-- Resolution selector -->
+    <div class="resolution-buttons">
+        <span>Resolution:</span>
+        <button onclick="setResolution(-1)">Auto</button>
+        <button onclick="setResolution(0)">360p</button>
+        <button onclick="setResolution(1)">480p</button>
+        <button onclick="setResolution(2)">720p</button>
+        <button onclick="setResolution(3)">1080p</button>
+    </div>
+
+    <!-- Video player -->
+    <video id="video-player" controls poster="{{ film.thumbnail }}"></video>
+</div>
+
+<script>
+const video = document.getElementById('video-player');
+let hls;  // hls.js instance
+let currentUrl = ""; // track current video source
+
+function playVideo(hlsUrl) {
+    if(currentUrl === hlsUrl) {
+        // Already playing this video
+        video.play();
+        return;
+    }
+
+    currentUrl = hlsUrl;
+
+    // Destroy previous HLS instance if exists
+    if(hls) {
+        hls.destroy();
+        hls = null;
+    }
+
+    if(Hls.isSupported()) {
+        hls = new Hls();
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+            console.log("Available resolutions:", data.levels);
+            video.play();
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsUrl;
+        video.play();
+    } else {
+        alert("HLS not supported in this browser.");
+    }
+}
+
+// Change resolution manually
+function setResolution(level) {
+    if(hls) {
+        hls.currentLevel = level;
+        console.log("Switched to level:", level);
+    }
+}
+</script>
+</body>
+</html>

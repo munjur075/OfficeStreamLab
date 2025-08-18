@@ -41,17 +41,18 @@ class Film(models.Model):
 
     thumbnail = CloudinaryField("image", folder="thumbnails", blank=True, null=True)
     trailer = CloudinaryField(resource_type="video", folder="trailers", blank=True, null=True)
-    trailer_hls_url = models.URLField(blank=True)
-    trailer_duration_s = models.PositiveIntegerField(default=0)
     full_film = CloudinaryField(resource_type="video", folder="full_films", blank=True, null=True)
-    film_hls_url = models.URLField(blank=True)
-    film_duration_s = models.PositiveIntegerField(default=0)
+
+    trailer_public_id = models.CharField(max_length=255, blank=True, null=True)
+    full_film_public_id = models.CharField(max_length=255, blank=True, null=True)
+
 
     status = models.CharField(max_length=12, choices=FilmStatus.choices, default=FilmStatus.REVIEW)
     currency = models.CharField(max_length=3, default="USD")
     rent_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     rental_hours = models.PositiveIntegerField(default=48)
     buy_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    full_film_duration = models.PositiveIntegerField(default=0)  # Duration in seconds
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -59,26 +60,12 @@ class Film(models.Model):
     views = models.PositiveIntegerField(default=0)
     total_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
+    # Fields for multi-resolution HLS URLs
+    trailer_hls_url = models.URLField(blank=True, null=True)
+    film_hls_url = models.URLField(blank=True, null=True)
+
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.title} ({self.year}) - {self.filmmaker.email}"
-
-    @staticmethod
-    def upload_video_with_hls(file_path: str, folder: str):
-        """
-        Upload a video to Cloudinary with multi-resolution & HLS playlist.
-        Returns (public_id, duration_seconds, hls_url).
-        """
-        result = uploader.upload_large(
-            file=file_path,
-            resource_type="video",
-            streaming_profile="multi_res",
-            folder=folder,
-            eager=[{"format": "m3u8"}]
-        )
-        public_id = result["public_id"]
-        duration = int(result.get("duration", 0))
-        hls_url = result.get("eager")[0]["secure_url"] if result.get("eager") else ""
-        return public_id, duration, hls_url

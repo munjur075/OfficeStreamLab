@@ -1,7 +1,11 @@
 from django.urls import path
-from . import views
+from .views import FilmUploadView, cloudinary_webhook, film_detail
 
 urlpatterns = [
-    path('upload/', views.FilmUploadView.as_view(), name='film_upload'),
-    path('cloudinary-webhook/', views.cloudinary_webhook, name='cloudinary_webhook'),
+    # URL to handle film upload via FilmUploadView
+    path('upload/', FilmUploadView.as_view(), name='film-upload'),
+
+    # URL to handle Cloudinary webhook notifications
+    path('webhook/cloudinary/', cloudinary_webhook, name='cloudinary-webhook'),
+    path("film-detail/<str:film_id>/", film_detail, name="film_detail"),
 ]
