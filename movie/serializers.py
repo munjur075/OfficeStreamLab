@@ -15,3 +15,10 @@ class FilmListSerializer(serializers.ModelSerializer):
         model = Film
         fields = "__all__"
 
+
+# class FilmsDetailsSerializer(serializers.ModelSerializer):
+#     genre = serializers.StringRelatedField(many=True)
+#     class Meta:
+#         model = Film
+#         fields = "__all__"
+

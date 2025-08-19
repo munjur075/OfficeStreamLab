@@ -140,16 +140,39 @@ def film_detail(request, film_id):
 
 
     
-class FilmDetailView(APIView):
+class FilmDetailsView(APIView):
     """
-    Returns details of a specific film by its ID (only if review).
+    Returns details of a specific published film by its ID.
     """
     def get(self, request, film_id):
-        # Get film with status 'published' (case-insensitive)
-        film = get_object_or_404(Film, id=film_id, status__iexact='review')
-        serializer = FilmSerializer(film)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        
+        # Fetch film with case-insensitive status check
+        film = get_object_or_404(Film, id=film_id, status__iexact='published')
+
+        film_details = {
+            "id": film.id,
+            "filmmaker": str(film.filmmaker),
+            "title": film.title,
+            "year": film.year,
+            "logline": film.logline,
+            "film_type": film.film_type,
+            "genre": [g.name for g in film.genre.all()] if hasattr(film.genre, "all") else film.genre,  # handle M2M or CharField
+            "thumbnail": film.thumbnail.url if film.thumbnail else None,
+            "status": film.status,
+            "rent_price": film.rent_price,
+            "rental_hours": film.rental_hours,
+            "buy_price": film.buy_price,
+            "full_film_duration": film.full_film_duration,
+            "views_count": film.views_count,
+            "total_earning": film.total_earning,
+            "trailer_hls_url": film.trailer_hls_url,
+        }
+
+        return Response({
+            "status": "success",
+            "message": "Film details fetched successfully",
+            "data": film_details
+        }, status=status.HTTP_200_OK)
 
 
 
