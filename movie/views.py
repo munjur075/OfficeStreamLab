@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from rest_framework.permissions import IsAuthenticated
-from .models import Film, Genre
+from .models import Film, Genre, FilmView
 from .serializers import FilmSerializer, FilmListSerializer
 
 
@@ -161,12 +161,76 @@ class FilmDetailView(APIView):
 
 
 
+from django.db import IntegrityError
+class FilmPlayView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, film_id):
+        user = request.user
+        try:
+            film = Film.objects.get(id=film_id)
+        except Film.DoesNotExist:
+            return Response({"error": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            FilmView.objects.create(film=film, user=user)
+           
+            film.views_count += 1
+            film.save()
+            
+        except IntegrityError:
+            # already viewedpytho
+            pass
+
+        return Response({
+            "message": "View recorded",
+            "views_count": film.views_count
+        })
+
 #
 
-    
+#
+class TrendingFilmsView(APIView):
+    def get(self, request):
+        # Get top trending published films by views
+        trending_films = Film.objects.filter(status="published").order_by('-views_count')[:10]
 
-# class TrendingMoviesView(APIView):
-#     def get(self, request):
-#         movies = Movie.objects.order_by('-trending_score')[:10]
-#         data = [{"title": m.title, "release_date": m.release_date} for m in movies]
-#         return Response(data)
+        trending_data = [
+            {
+                "id": f.id,
+                "title": f.title,
+                "views": f.views_count,
+                "release_date": f.created_at.date(),
+            }
+            for f in trending_films
+        ]
+
+        return Response({
+            "status": "success",
+            "message": "Trending films fetched successfully",
+            "data": trending_data
+        })
+
+
+class LatestFilmsView(APIView):
+    def get(self, request):
+        # Get latest published films by creation date
+        latest_films = Film.objects.filter(status="published").order_by('-created_at')[:10]
+
+        latest_data = [
+            {
+                "id": f.id,
+                "title": f.title,
+                "views": f.views_count,
+                "release_date": f.created_at.date(),
+            }
+            for f in latest_films
+        ]
+
+        return Response({
+            "status": "success",
+            "message": "Latest films fetched successfully",
+            "data": latest_data
+        })
+
+    
