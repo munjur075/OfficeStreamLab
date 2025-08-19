@@ -130,7 +130,7 @@ def cloudinary_webhook(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
-
+# For HLS Testing by Frontend
 def film_detail(request, film_id):
     """
     Render film detail page with HLS video player
@@ -138,15 +138,7 @@ def film_detail(request, film_id):
     film = get_object_or_404(Film, id=film_id)
     return render(request, "movie/film_detail.html", {"film": film})
 
-class AllFlimListView(APIView):
-    """
-    Returns a list of films with status 'published', newest first.
-    """
-    def get(self, request):
-        films = Film.objects.filter(status__iexact='published').order_by('-created_at')
-        print(films)  # Will show queryset in console
-        serializer = FilmListSerializer(films, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
     
 class FilmDetailView(APIView):
     """
@@ -187,7 +179,7 @@ class FilmPlayView(APIView):
             "views_count": film.views_count
         })
 
-#
+
 
 #
 class TrendingFilmsView(APIView):
