@@ -142,13 +142,15 @@ def film_detail(request, film_id):
     
 class FilmDetailsView(APIView):
     """
-    Returns details of a specific published film by its ID.
+    Returns details of a specific published film by its ID, 
+    including related movies.
     """
     def get(self, request, film_id):
         
         # Fetch film with case-insensitive status check
         film = get_object_or_404(Film, id=film_id, status__iexact='published')
 
+        # Build film details
         film_details = {
             "id": film.id,
             "filmmaker": str(film.filmmaker),
@@ -156,7 +158,7 @@ class FilmDetailsView(APIView):
             "year": film.year,
             "logline": film.logline,
             "film_type": film.film_type,
-            "genre": [g.name for g in film.genre.all()] if hasattr(film.genre, "all") else film.genre,  # handle M2M or CharField
+            "genre": [g.name for g in film.genre.all()] if hasattr(film.genre, "all") else film.genre,
             "thumbnail": film.thumbnail.url if film.thumbnail else None,
             "status": film.status,
             "rent_price": film.rent_price,
@@ -168,10 +170,47 @@ class FilmDetailsView(APIView):
             "trailer_hls_url": film.trailer_hls_url,
         }
 
+        # 🔹 Fetch related films by shared genre
+        if hasattr(film.genre, "all"):
+            related_films = Film.objects.filter(
+                genre__in=film.genre.all(),
+                status__iexact='published'
+            ).exclude(id=film.id).distinct()[:10]
+        else:
+            related_films = Film.objects.filter(
+                genre=film.genre,
+                status__iexact='published'
+            ).exclude(id=film.id)[:10]
+
+        related_data = [
+            {
+                "id": f.id,
+                "filmmaker": str(f.filmmaker),
+                "title": f.title,
+                "year": f.year,
+                "logline": f.logline,
+                "film_type": f.film_type,
+                "genre": [g.name for g in f.genre.all()] if hasattr(f.genre, "all") else f.genre,
+                "thumbnail": f.thumbnail.url if f.thumbnail else None,
+                "status": f.status,
+                "rent_price": f.rent_price,
+                "rental_hours": f.rental_hours,
+                "buy_price": f.buy_price,
+                "full_film_duration": f.full_film_duration,
+                "views_count": f.views_count,
+                "total_earning": f.total_earning,
+                "trailer_hls_url": f.trailer_hls_url,
+            }
+            for f in related_films
+        ]
+
         return Response({
             "status": "success",
             "message": "Film details fetched successfully",
-            "data": film_details
+            "data": {
+                "film": film_details,
+                "related_movies": related_data
+            }
         }, status=status.HTTP_200_OK)
 
 
@@ -247,5 +286,13 @@ class LatestFilmsView(APIView):
             "message": "Latest films fetched successfully",
             "data": latest_data
         })
+
+#
+class RelatedMoviesView(APIView):
+    def get(self, request, film_id):
+        film = Film.objects.get(id=film_id)
+        related = Film.objects.filter(genres__in=film.genres.all()).exclude(id=film.id).distinct()[:10]
+        return Response({"related_movies": [m.title for m in related]})
+
 
     
