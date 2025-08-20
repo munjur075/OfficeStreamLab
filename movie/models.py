@@ -75,13 +75,13 @@ class Film(models.Model):
 # Track unique views per Flims
 class FilmView(models.Model):
     film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name='views')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    viewer = models.ForeignKey(User, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
     #
 
     class Meta:
-        unique_together = ('film', 'user')  # ensures one record per user per film
+        unique_together = ('film', 'viewer')  # ensures one record per user per film
         ordering = ['-viewed_at']
 
     def __str__(self):
-        return f"{self.user.email} viewed {self.film.title}"
+        return f"{self.viewer.email} viewed {self.film.title}"

@@ -11,7 +11,7 @@ class GenreAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 class FilmViewAdmin(admin.ModelAdmin):
-    list_display =('film', 'user')
+    list_display =('film', 'viewer')
 
 # Register models in the admin interface
 admin.site.register(Film, FilmAdmin)
