@@ -4,6 +4,7 @@ from accounts.models import User
 import shortuuid
 from cloudinary.models import CloudinaryField
 from cloudinary import uploader
+from django.utils.text import slugify
 
 def generate_short_uuid() -> str:
     return shortuuid.uuid()[:10]
@@ -34,6 +35,7 @@ class Film(models.Model):
     id = models.CharField(primary_key=True, max_length=10, default=generate_short_uuid, editable=False, unique=True)
     filmmaker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="films")
     title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=255, unique=True, editable=True, blank=True)  # ✅ auto movie_id
     year = models.PositiveSmallIntegerField(null=True, blank=True)
     logline = models.CharField(max_length=280, blank=True)
     film_type = models.CharField(max_length=20, choices=FilmType.choices)
@@ -66,6 +68,24 @@ class Film(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:  # New object
+            base_slug = slugify(self.title)
+        else:
+            old = Film.objects.filter(pk=self.pk).first()
+            if old and old.title != self.title:
+                base_slug = slugify(self.title)
+            else:
+                base_slug = self.slug
+
+        slug = base_slug
+        counter = 1
+        while Film.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        self.slug = slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.title} ({self.year}) - {self.filmmaker.email}"
