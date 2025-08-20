@@ -224,14 +224,15 @@ class FilmPlayView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, film_id):
-        user = request.user
+        viewer = request.user
+        print(viewer)
         try:
             film = Film.objects.get(id=film_id)
         except Film.DoesNotExist:
             return Response({"error": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            FilmView.objects.create(film=film, user=user)
+            FilmView.objects.create(film=film, viewer=viewer)
            
             film.views_count += 1
             film.save()
@@ -251,7 +252,7 @@ class FilmPlayView(APIView):
 class TrendingFilmsView(APIView):
     def get(self, request):
         # Get top trending published films by views
-        trending_films = Film.objects.filter(status="published").order_by('-views_count')[:10]
+        trending_films = Film.objects.filter(status="PUBLISHED").order_by('-views_count')[:10]
 
         trending_data = [
             {
@@ -273,7 +274,7 @@ class TrendingFilmsView(APIView):
 class LatestFilmsView(APIView):
     def get(self, request):
         # Get latest published films by creation date
-        latest_films = Film.objects.filter(status="published").order_by('-created_at')[:10]
+        latest_films = Film.objects.filter(status="PUBLISHED").order_by('-created_at')[:10]
 
         latest_data = [
             {
