@@ -107,6 +107,8 @@ def cloudinary_webhook(request):
         public_id = payload.get("public_id")
         resource_type = payload.get("resource_type")
         duration = payload.get("duration")
+        eager_process = payload.get("eager")
+        print("egar process start:",eager_process)
 
         film = None
         if Film.objects.filter(trailer_public_id=public_id).exists():
