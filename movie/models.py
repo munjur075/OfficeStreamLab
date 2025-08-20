@@ -10,17 +10,19 @@ def generate_short_uuid() -> str:
     return shortuuid.uuid()[:10]
 
 class FilmStatus(models.TextChoices):
-    REVIEW = "review", _("In Review")
-    PUBLISHED = "published", _("Published")
-    REJECTED = "rejected", _("Rejected")
+    REVIEW = "REVIEW", _("Under Review")
+    PUBLISHED = "PUBLISHED", _("Published")
+    REJECTED = "REJECTED", _("Rejected")
+
 
 class FilmType(models.TextChoices):
-    MOVIE = "movie", _("Movie")
-    DRAMA = "drama", _("Drama")
-    SHORT = "short", _("Short")
-    DOCUMENTARY = "documentary", _("Documentary")
-    SERIES = "series", _("Series")
+    MOVIE = "MOVIE", _("Movie")
+    DRAMA = "DRAMA", _("Drama")
+    SHORT = "SHORT", _("Short Film")
+    DOCUMENTARY = "DOCUMENTARY", _("Documentary")
+    SERIES = "SERIES", _("Series")
 
+    
 class Genre(models.Model):
     name = models.CharField(max_length=60, unique=True)
 

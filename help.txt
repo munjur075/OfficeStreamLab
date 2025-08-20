@@ -61,3 +61,13 @@ class UserFilmTransaction(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.film} ({self.transaction_type})"
+
+
+##
+class FilmSerializer(serializers.ModelSerializer):
+    status = serializers.CharField(source="get_status_display", read_only=True)
+    film_type = serializers.CharField(source="get_film_type_display", read_only=True)
+
+    class Meta:
+        model = Film
+        fields = ["id", "title", "status", "film_type", "created_at"]

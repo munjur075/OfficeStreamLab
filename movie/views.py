@@ -291,12 +291,60 @@ class LatestFilmsView(APIView):
             "data": latest_data
         })
 
-#
-class RelatedMoviesView(APIView):
-    def get(self, request, film_id):
-        film = Film.objects.get(id=film_id)
-        related = Film.objects.filter(genres__in=film.genres.all()).exclude(id=film.id).distinct()[:10]
-        return Response({"related_movies": [m.title for m in related]})
 
 
+
+# ---------------------------
+# option A
+# ---------------------------
+class MyTitlesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filmmaker = request.user
+        my_titles = Film.objects.filter(filmmaker=filmmaker)
+
+        data = [
+            {
+                "title": t.title,
+                "status": t.get_status_display(),      # human-readable label
+                "film_type": t.get_film_type_display(),# human-readable label
+                "views": t.views_count,
+                "total_earning": t.total_earning
+            }
+            for t in my_titles
+        ]
+
+        return Response({
+            "status": "success",
+            "message": "My titles fetched successfully",
+            "data": data
+        })
     
+
+# ---------------------------
+# option B
+# ---------------------------
+
+# class MyTitlesView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         filmmaker = request.user
+#         my_titles = Film.objects.filter(filmmaker=filmmaker)
+
+#         data = []  # initialize the list outside the loop
+#         for t in my_titles:
+#             data.append({
+#                 "title": t.title,
+#                 "status": t.get_status_display(),      # human-readable label
+#                 "film_type": t.get_film_type_display(),# human-readable label
+#                 "views": t.views_count,
+#                 "total_earning": t.total_earning
+#             })
+
+#         return Response({
+#             "status": "success",
+#             "message": "My titles fetched successfully",
+#             "data": data
+#         })
