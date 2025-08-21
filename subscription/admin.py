@@ -1,3 +1,10 @@
 from django.contrib import admin
+from .models import Wallet, Transaction, SubscriptionPlan, Subscription
 
-# Register your models here.
+# Wallet(ReelBux & Distro)
+admin.site.register(Wallet)
+admin.site.register(Transaction)
+
+# Subscription
+admin.site.register(SubscriptionPlan)
+admin.site.register(Subscription)

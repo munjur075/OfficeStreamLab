@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     # Custom apps
     'accounts',
     'movie',
+    'subscription',
 ]
 
 # CustomUser Model

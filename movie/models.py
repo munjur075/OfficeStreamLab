@@ -5,6 +5,8 @@ import shortuuid
 from cloudinary.models import CloudinaryField
 from cloudinary import uploader
 from django.utils.text import slugify
+from django.utils import timezone
+from datetime import timedelta
 
 def generate_short_uuid() -> str:
     return shortuuid.uuid()[:10]
@@ -101,3 +103,41 @@ class FilmView(models.Model):
 
     def __str__(self):
         return f"{self.viewer.email} viewed {self.film.title}"
+
+
+
+#
+# -------------------- FILMS (BUY / RENT) --------------------
+class FilmAccess(models.Model):
+    """Tracks user access to films (buy = lifetime, rent = temporary)!"""
+
+    ACCESS_TYPE = [
+        ("Buy", "Lifetime"),
+        ("Rent", "Temporary"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="film_access")
+    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name="access")
+    access_type = models.CharField(max_length=10, choices=ACCESS_TYPE)
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Film Access"
+        verbose_name_plural = "Film Accesses"
+        unique_together = ("user", "film", "access_type")
+
+    def save(self, *args, **kwargs):
+        if self.access_type == "Rent" and not self.end_date:
+            self.end_date = self.start_date + timedelta(days=self.film.rental_hours)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_active(self):
+        if self.access_type == "Buy":
+            return True
+        return self.end_date and self.end_date >= timezone.now()
+
+    def __str__(self):
+        return f"{self.user} - {self.film.title} ({self.access_type})"
+
