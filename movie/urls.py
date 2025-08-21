@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import FilmUploadView, cloudinary_webhook, film_detail, FilmDetailsView, FilmPlayView,TrendingFilmsView, LatestFilmsView, MyTitlesView
+from .views import FilmUploadView, cloudinary_webhook, film_detail, FilmDetailsView, FilmPlayView,TrendingFilmsView, LatestFilmsView, MyTitlesView, GenreListView
 
 urlpatterns = [
     # film upload
@@ -24,4 +24,7 @@ urlpatterns = [
 
     # my titles
     path("my-titles/", MyTitlesView.as_view(), name="my-titles"),
+
+    # genre list
+    path("genre/", GenreListView.as_view(), name="genre"),
 ]

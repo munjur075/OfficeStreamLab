@@ -9,7 +9,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from rest_framework.permissions import IsAuthenticated
 from .models import Film, Genre, FilmView
-from .serializers import FilmSerializer, FilmListSerializer
+from .serializers import FilmSerializer, FilmListSerializer, GenreSerializer
 
 
 class FilmUploadView(APIView):
@@ -349,3 +349,17 @@ class MyTitlesView(APIView):
 #             "message": "My titles fetched successfully",
 #             "data": data
 #         })
+
+
+class GenreListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        genres = Genre.objects.all().order_by("name")
+        serializer = GenreSerializer(genres, many=True)
+
+        return Response({
+            "status": "success",
+            "message": "Genres fetched successfully",
+            "data": serializer.data
+        })
