@@ -24,5 +24,5 @@ urlpatterns = [
     path("checkout_cancel/", views.checkout_cancel, name="checkout_cancel"),
 
     # Stripe webhook endpoint
-    path("webhook/stripe/", webhook.stripe_webhook, name="stripe_webhook"),
+    path("webhook/", webhook.stripe_webhook, name="stripe_webhook"),
 ]

@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Wallet, Transaction, Withdrawal,
     PlanFeature, SubscriptionPlan, PlanFeatureAssignment,
-    UserSubscription, SubscriptionUsage
+    UserSubscription
 )
 
 
@@ -60,16 +60,9 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
 # -------------------- USER SUBSCRIPTIONS --------------------
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'plan', 'payment_method', 'active', 'start_date', 'end_date')
-    list_filter = ('active', 'payment_method')
+    list_display = ('user', 'plan', 'payment_method', 'status', 'start_date', 'end_date')
+    list_filter = ('status', 'payment_method')
     search_fields = ('user__email', 'plan__name')
     readonly_fields = ('start_date', 'end_date')
     ordering = ('-start_date',)
 
-
-# -------------------- SUBSCRIPTION USAGE --------------------
-@admin.register(SubscriptionUsage)
-class SubscriptionUsageAdmin(admin.ModelAdmin):
-    list_display = ('user', 'subscription', 'used_value', 'free_used_value')
-    search_fields = ('user__email', 'subscription__plan__name')
-    ordering = ('-subscription__start_date',)

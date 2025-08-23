@@ -39,7 +39,7 @@ class CreateCheckoutSessionView(APIView):
                 success_url=request.build_absolute_uri(reverse("subscription:checkout_success")) + "?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=request.build_absolute_uri(reverse("subscription:checkout_cancel")),
             )
-            print(session)
+            # print(session)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

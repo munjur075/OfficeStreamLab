@@ -170,10 +170,10 @@ class PlanFeatureAssignment(models.Model):
         return f"{self.plan.name} → {self.feature.name}"
 
 
-# -------------------- USER SUBSCRIPTIONS --------------------
+# -------------------- USER SUBSCRIPTIONS FOR AI TOOLS --------------------
 class UserSubscription(models.Model):
     """
-    Tracks user subscriptions to plans.
+    Tracks user subscriptions to AI plans.
     Automatically calculates end_date based on plan duration.
     """
     PAYMENT_METHODS = [
@@ -182,13 +182,24 @@ class UserSubscription(models.Model):
         ("paypal", "PayPal"),
     ]
 
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("canceled", "Canceled"),
+        ("expired", "Expired"),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscriptions")
-    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name="user_subscriptions")
+    plan = models.ForeignKey("SubscriptionPlan", on_delete=models.CASCADE, related_name="user_subscriptions")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
-    transaction = models.ForeignKey(Transaction, on_delete=models.SET_NULL, null=True, blank=True)
-    start_date = models.DateTimeField(auto_now_add=True)
+    subscription_id = models.CharField(max_length=255, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    used_value = models.PositiveIntegerField(default=0)         # actual usage count
+    free_used_value = models.PositiveIntegerField(default=0)    # free quota usage
+    limit_value = models.PositiveIntegerField(default=0)       # max allowed usage
+    start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(blank=True, null=True)
-    active = models.BooleanField(default=True)
+    cancel_at_period_end = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
 
     class Meta:
         verbose_name = "User Subscription"
@@ -198,33 +209,13 @@ class UserSubscription(models.Model):
     def save(self, *args, **kwargs):
         # auto-calculate end_date if missing
         if not self.end_date:
-            duration = self.plan.duration_days if self.plan else 30
-            self.end_date = self.start_date + timedelta(days=duration)
+            duration_days = getattr(self.plan, "duration_days", 30)
+            self.end_date = self.start_date + timedelta(days=duration_days)
         super().save(*args, **kwargs)
 
+    def is_active(self):
+        return self.status == "active" and (self.end_date is None or self.end_date >= timezone.now())
+
     def __str__(self):
-        status = "Active" if self.active else "Expired"
+        status = self.status.capitalize()
         return f"{self.user.email} - {self.plan.name} ({status})"
-
-
-# -------------------- SUBSCRIPTION USAGE --------------------
-class SubscriptionUsage(models.Model):
-    """
-    Track how much of a subscription plan the user has consumed (plan-wise usage).
-    Example:
-        User A - Basic Plan: used 120 out of 200 credits
-    """
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscription_usage")
-    subscription = models.ForeignKey(UserSubscription, on_delete=models.CASCADE, related_name="usage")
-
-    used_value = models.PositiveIntegerField(default=0)         # actual usage count
-    free_used_value = models.PositiveIntegerField(default=0)    # free quota usage (if any)
-
-    class Meta:
-        verbose_name = "Subscription Usage"
-        verbose_name_plural = "Subscription Usages"
-        unique_together = ("user", "subscription")  # one usage record per user-subscription
-
-    def __str__(self):
-        return f"{self.user.email} - {self.subscription.plan.name}: {self.used_value}"
-

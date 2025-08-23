@@ -14,6 +14,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
+    print(payload)
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
@@ -40,23 +41,24 @@ def stripe_webhook(request):
         # fetch full subscription details
         sub = stripe.Subscription.retrieve(subscription_id)
         price_id = sub["items"]["data"][0]["price"]["id"]
-        current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
+        # current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
 
-        return HttpResponse(user_id)
+        # return HttpResponse(user_id)
 
         if user_id:
             try:
                 user = User.objects.get(id=int(user_id))
-                user.subscription = plan
-                user.save()
-                Subscription.objects.update_or_create(
-                    stripe_subscription_id=subscription_id,
+                # user.subscription = plan
+                # user.save()
+                UserSubscription.objects.update_or_create(
+                    subscription_id=subscription_id,
                     defaults={
                         "user": user,
-                        "stripe_price_id": price_id,
                         "plan": plan or "",
+                        "payment_method": "stripe",
+                        "price": price_id,
                         "status": sub["status"],
-                        "current_period_end": current_period_end,
+                        # "current_period_end": current_period_end,
                         "cancel_at_period_end": sub.get("cancel_at_period_end", False),
                     }
                 )
@@ -69,15 +71,15 @@ def stripe_webhook(request):
         sub = obj
         subscription_id = sub["id"]
         try:
-            s = Subscription.objects.get(stripe_subscription_id=subscription_id)
+            s = UserSubscription.objects.get(subscription_id=subscription_id)
             s.status = sub.get("status", s.status)
             s.cancel_at_period_end = sub.get("cancel_at_period_end", s.cancel_at_period_end)
-            try:
-                s.current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
-            except Exception:
-                pass
+            # try:
+            #     s.current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
+            # except Exception:
+            #     pass
             s.save()
-        except Subscription.DoesNotExist:
+        except UserSubscription.DoesNotExist:
             # optionally create or log
             pass
 
@@ -87,13 +89,13 @@ def stripe_webhook(request):
         subscription_id = invoice.get("subscription")
         # mark subscription active, etc.
         if subscription_id:
-            Subscription.objects.filter(stripe_subscription_id=subscription_id).update(status="active")
+            UserSubscription.objects.filter(subscription_id=subscription_id).update(status="active")
 
     elif ev_type == "invoice.payment_failed":
         invoice = obj
         subscription_id = invoice.get("subscription")
         if subscription_id:
-            Subscription.objects.filter(stripe_subscription_id=subscription_id).update(status="past_due")
+            UserSubscription.objects.filter(stripe_subscription_id=subscription_id).update(status="past_due")
 
     # Acknowledge receipt
     return HttpResponse(status=200)
