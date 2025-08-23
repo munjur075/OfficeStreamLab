@@ -14,7 +14,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
-    print(payload)
+    # print(payload)
     sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
@@ -28,11 +28,17 @@ def stripe_webhook(request):
     ev_type = event["type"]
     obj = event["data"]["object"]
 
+    print(ev_type)
+    print("---------------------------------------------------------------MRRRRR")
+    print(obj)
+
     # 1) Checkout completed -> subscription created
     if ev_type == "checkout.session.completed":
+        print('SUccess-------------------------------------------------------')
         # session contains 'subscription' and metadata if set
         session = obj
         subscription_id = session.get("subscription")
+        print(subscription_id)
         metadata = session.get("metadata", {}) or session.get("subscription_data", {}).get("metadata", {})
         # prefer metadata sent earlier
         user_id = metadata.get("django_user_id")
@@ -46,21 +52,17 @@ def stripe_webhook(request):
         # return HttpResponse(user_id)
 
         if user_id:
+            print('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR')
             try:
                 user = User.objects.get(id=int(user_id))
                 # user.subscription = plan
                 # user.save()
                 UserSubscription.objects.update_or_create(
                     subscription_id=subscription_id,
-                    defaults={
-                        "user": user,
-                        "plan": plan or "",
-                        "payment_method": "stripe",
-                        "price": price_id,
-                        "status": sub["status"],
-                        # "current_period_end": current_period_end,
-                        "cancel_at_period_end": sub.get("cancel_at_period_end", False),
-                    }
+                    user = user,
+                    plan = plan,
+                    payment_method = 'stripe',
+                    price = 30,
                 )
             except User.DoesNotExist:
                 # handle orphan subscription or log
@@ -68,6 +70,7 @@ def stripe_webhook(request):
 
     # 2) Subscription updated/deleted or invoice events -> update DB
     elif ev_type in ("customer.subscription.updated", "customer.subscription.deleted"):
+        print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
         sub = obj
         subscription_id = sub["id"]
         try:
@@ -84,6 +87,7 @@ def stripe_webhook(request):
             pass
 
     elif ev_type == "invoice.payment_succeeded":
+        print('bbbbbbbbbbbbbbbbbbbbbbbb')
         # update invoice / subscription status if needed
         invoice = obj
         subscription_id = invoice.get("subscription")
@@ -92,10 +96,14 @@ def stripe_webhook(request):
             UserSubscription.objects.filter(subscription_id=subscription_id).update(status="active")
 
     elif ev_type == "invoice.payment_failed":
+        print('ccccccccccccccccccccccccc,,')
         invoice = obj
         subscription_id = invoice.get("subscription")
         if subscription_id:
-            UserSubscription.objects.filter(stripe_subscription_id=subscription_id).update(status="past_due")
+            UserSubscription.objects.filter(subscription_id=subscription_id).update(status="past_due")
 
     # Acknowledge receipt
     return HttpResponse(status=200)
+
+
+# 
