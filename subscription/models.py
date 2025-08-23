@@ -151,7 +151,7 @@ class SubscriptionPlan(models.Model):
 
     def __str__(self):
         limit_text = "Unlimited" if not self.limit_value else self.limit_value
-        return f"{self.name} (${self.price}) - Limit: {limit_text} ({self.duration_days} days)"
+        return f"{self.name} (${self.price}) - Limit Value: {limit_text}, validity({self.duration_days} days)"
 
 
 # -------------------- PLAN FEATURE ASSIGNMENT --------------------

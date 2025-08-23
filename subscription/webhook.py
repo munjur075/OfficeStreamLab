@@ -28,9 +28,9 @@ def stripe_webhook(request):
     ev_type = event["type"]
     obj = event["data"]["object"]
 
-    print(ev_type)
-    print("---------------------------------------------------------------MRRRRR")
-    print(obj)
+    # print(ev_type)
+    # print("---------------------------------------------------------------MRRRRR")
+    # print(obj)
 
     # 1) Checkout completed -> subscription created
     if ev_type == "checkout.session.completed":
@@ -38,11 +38,12 @@ def stripe_webhook(request):
         # session contains 'subscription' and metadata if set
         session = obj
         subscription_id = session.get("subscription")
-        print(subscription_id)
+        print(subscription_id,": IDDDDDDDDD")
         metadata = session.get("metadata", {}) or session.get("subscription_data", {}).get("metadata", {})
         # prefer metadata sent earlier
         user_id = metadata.get("django_user_id")
         plan = metadata.get("plan") or session.get("display_items", [{}])[0].get("plan", {}).get("nickname")
+        print("User_ID",user_id)
 
         # fetch full subscription details
         sub = stripe.Subscription.retrieve(subscription_id)
@@ -52,21 +53,21 @@ def stripe_webhook(request):
         # return HttpResponse(user_id)
 
         if user_id:
-            print('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR')
+            print("Stripe webhook: Processing subscription for user", user_id)
             try:
                 user = User.objects.get(id=int(user_id))
-                # user.subscription = plan
-                # user.save()
+
                 UserSubscription.objects.update_or_create(
                     subscription_id=subscription_id,
-                    user = user,
-                    plan = plan,
-                    payment_method = 'stripe',
-                    price = 30,
+                    defaults={
+                        "user": user,
+                        "plan": "Basic",
+                        "payment_method": "stripe",
+                        "price": 30,
+                    },
                 )
             except User.DoesNotExist:
-                # handle orphan subscription or log
-                pass
+                print(f"⚠️ User with id {user_id} not found. Subscription not linked.")
 
     # 2) Subscription updated/deleted or invoice events -> update DB
     elif ev_type in ("customer.subscription.updated", "customer.subscription.deleted"):
