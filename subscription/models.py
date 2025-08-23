@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from accounts.models import User
 
+
 # -------------------- WALLET --------------------
 class Wallet(models.Model):
     """
@@ -20,7 +21,7 @@ class Wallet(models.Model):
         verbose_name_plural = "Wallets"
 
     def __str__(self):
-        return f"Wallet of {self.user}"
+        return f"Wallet of {self.user.email}"
 
 
 # -------------------- TRANSACTIONS --------------------
@@ -77,7 +78,7 @@ class Transaction(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user} - {self.tx_type} {self.amount} ({self.source})"
+        return f"{self.user.email} - {self.tx_type} {self.amount} ({self.get_status_display()})"
 
 
 # -------------------- WITHDRAWALS --------------------
@@ -104,15 +105,13 @@ class Withdrawal(models.Model):
         ordering = ["-requested_at"]
 
     def __str__(self):
-        return f"Withdrawal {self.amount} by {self.user} ({self.status})"
+        return f"Withdrawal {self.amount} by {self.user.email} ({self.status})"
 
 
-
-#
 # -------------------- PLAN FEATURE --------------------
 class PlanFeature(models.Model):
     """
-    Represents a type of feature (e.g., AI generations, Video length, Image resolution).
+    Represents a type of feature (e.g., AI generations, Video generations, Image generations etc.)
     """
     name = models.CharField(max_length=200, unique=True)
 
@@ -124,48 +123,51 @@ class PlanFeature(models.Model):
 class SubscriptionPlan(models.Model):
     """
     Subscription plan like Basic, Pro, Enterprise.
-    Each plan has different limits for features.
+    Each plan has different limits (plan-wise, not per feature).
     """
     name = models.CharField(max_length=50, unique=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)  # e.g., "StarIcon"
+    icon = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Optional: store an icon name (FontAwesome/Bootstrap) or emoji."
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_highlighted = models.BooleanField(default=False)
+
     features = models.ManyToManyField(
-        PlanFeature,
-        through='PlanFeatureAssignment',
-        related_name='plans'
+        "PlanFeature",
+        through="PlanFeatureAssignment",
+        related_name="plans"
     )
 
+    # PLAN-WISE LIMIT
     limit_value = models.PositiveIntegerField(
         null=True, blank=True,
-        help_text="Set a numeric limit. Leave empty or 0 for unlimited."
+        help_text="Set a numeric limit for the whole plan. Leave empty/0 for unlimited."
     )
+
+    duration_days = models.PositiveIntegerField(default=30, help_text="Plan duration in days")
     created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        if self.limit_value and self.limit_value > 0:
-            return f"{self.plan.name} - {self.feature.name}: {self.limit_value}"
-        return f"{self.plan.name} - {self.feature.name}: Unlimited"
 
     def __str__(self):
-        return f"{self.name} (${self.price})"
+        limit_text = "Unlimited" if not self.limit_value else self.limit_value
+        return f"{self.name} (${self.price}) - Limit: {limit_text} ({self.duration_days} days)"
 
 
 # -------------------- PLAN FEATURE ASSIGNMENT --------------------
 class PlanFeatureAssignment(models.Model):
     """
-    Through table:
-    Links SubscriptionPlan <-> PlanFeature with per-plan limit.
-    Example:
-        Basic - AI Generations - 200
-        Pro - AI Generations - 500
-        Enterprise - AI Generations - Unlimited (limit_value = 0 or NULL)
+    Links a SubscriptionPlan with a PlanFeature.
+    No per-feature limit; just inclusion/exclusion.
     """
     plan = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
     feature = models.ForeignKey(PlanFeature, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('plan', 'feature')
+        unique_together = ("plan", "feature")
 
+    def __str__(self):
+        return f"{self.plan.name} → {self.feature.name}"
 
 
 # -------------------- USER SUBSCRIPTIONS --------------------
@@ -196,34 +198,33 @@ class UserSubscription(models.Model):
     def save(self, *args, **kwargs):
         # auto-calculate end_date if missing
         if not self.end_date:
-            self.end_date = self.start_date + timedelta(days=30)  # default 1 month
+            duration = self.plan.duration_days if self.plan else 30
+            self.end_date = self.start_date + timedelta(days=duration)
         super().save(*args, **kwargs)
 
     def __str__(self):
         status = "Active" if self.active else "Expired"
-        return f"{self.user} - {self.plan.name} ({status})"
+        return f"{self.user.email} - {self.plan.name} ({status})"
 
 
-# -------------------- SUBSCRIPTION USAGE TRACKING --------------------
+# -------------------- SUBSCRIPTION USAGE --------------------
 class SubscriptionUsage(models.Model):
     """
-    Track how much of each feature a user has consumed
-    under a specific subscription plan.
+    Track how much of a subscription plan the user has consumed (plan-wise usage).
     Example:
-        User A - Basic Plan - AI Generations: used 120/200
-        User A - Basic Plan - Video Minutes: used 30/120
+        User A - Basic Plan: used 120 out of 200 credits
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscription_usage")
     subscription = models.ForeignKey(UserSubscription, on_delete=models.CASCADE, related_name="usage")
-    # feature = models.ForeignKey(PlanFeature, on_delete=models.CASCADE, related_name="usage")
 
-    ai_used_value = models.PositiveIntegerField(default=0)        # actual usage count
-    free_ai_used_value = models.PositiveIntegerField(default=0)   # free quota usage
+    used_value = models.PositiveIntegerField(default=0)         # actual usage count
+    free_used_value = models.PositiveIntegerField(default=0)    # free quota usage (if any)
 
     class Meta:
         verbose_name = "Subscription Usage"
         verbose_name_plural = "Subscription Usages"
-        unique_together = ("user", "subscription")  # avoid duplicates
+        unique_together = ("user", "subscription")  # one usage record per user-subscription
 
     def __str__(self):
-        return f"{self.user} - {self.subscription.plan.name}: {self.ai_used_value}"
+        return f"{self.user.email} - {self.subscription.plan.name}: {self.used_value}"
+
