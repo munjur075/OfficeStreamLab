@@ -111,7 +111,7 @@ class Withdrawal(models.Model):
 # -------------------- PLAN FEATURE --------------------
 class PlanFeature(models.Model):
     """
-    Represents a type of feature (e.g., AI generations, Video generations, Image generations etc.)
+    Represents a type of feature (e.g., AI generations, Video generations, Image generations, etc.)
     """
     name = models.CharField(max_length=200, unique=True)
 
@@ -123,7 +123,7 @@ class PlanFeature(models.Model):
 class SubscriptionPlan(models.Model):
     """
     Subscription plan like Basic, Pro, Enterprise.
-    Each plan has different limits (plan-wise, not per feature).
+    Each plan has different limits (plan-wise, not per feature). Monthly/annual pricing.
     """
     name = models.CharField(max_length=50, unique=True)
     icon = models.CharField(
@@ -132,6 +132,7 @@ class SubscriptionPlan(models.Model):
         help_text="Optional: store an icon name (FontAwesome/Bootstrap) or emoji."
     )
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    duration_days = models.PositiveIntegerField(default=30, help_text="Duration in days")  # monthly/yearly handled here
     is_highlighted = models.BooleanField(default=False)
 
     features = models.ManyToManyField(
@@ -146,12 +147,11 @@ class SubscriptionPlan(models.Model):
         help_text="Set a numeric limit for the whole plan. Leave empty/0 for unlimited."
     )
 
-    duration_days = models.PositiveIntegerField(default=30, help_text="Plan duration in days")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         limit_text = "Unlimited" if not self.limit_value else self.limit_value
-        return f"{self.name} (${self.price}) - Limit Value: {limit_text}, validity({self.duration_days} days)"
+        return f"{self.name} (${self.price}) - Limit: {limit_text}, Duration: {self.duration_days} days"
 
 
 # -------------------- PLAN FEATURE ASSIGNMENT --------------------
@@ -170,52 +170,31 @@ class PlanFeatureAssignment(models.Model):
         return f"{self.plan.name} → {self.feature.name}"
 
 
-# -------------------- USER SUBSCRIPTIONS FOR AI TOOLS --------------------
+# -------------------- USER SUBSCRIPTIONS --------------------
 class UserSubscription(models.Model):
-    """
-    Tracks user subscriptions to AI plans.
-    Automatically calculates end_date based on plan duration.
-    """
-    PAYMENT_METHODS = [
-        ("reelbux", "ReelBux"),
-        ("stripe", "Stripe"),
-        ("paypal", "PayPal"),
-    ]
-
-    STATUS_CHOICES = [
-        ("active", "Active"),
-        ("canceled", "Canceled"),
-        ("expired", "Expired"),
-    ]
-
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscriptions")
-    plan = models.ForeignKey("SubscriptionPlan", on_delete=models.CASCADE, related_name="user_subscriptions")
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
-    subscription_id = models.CharField(max_length=255, unique=True)
+    plan_name = models.CharField(max_length=100, default='Basic')  # reference only
+    payment_method = models.CharField(max_length=50, default='stripe')  # e.g., 'stripe', 'paypal', etc.
+    subscription_id = models.CharField(max_length=255, unique=True)  # Stripe subscription ID
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    
     used_value = models.PositiveIntegerField(default=0)         # actual usage count
     free_used_value = models.PositiveIntegerField(default=0)    # free quota usage
-    limit_value = models.PositiveIntegerField(default=0)       # max allowed usage
-    start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField(blank=True, null=True)
+    limit_value = models.PositiveIntegerField(default=0)        # max allowed usage
+    
+    current_period_start = models.DateTimeField(default=timezone.now)
+    current_period_end = models.DateTimeField(blank=True, null=True)  # from Stripe
+    
     cancel_at_period_end = models.BooleanField(default=False)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
-
-    class Meta:
-        verbose_name = "User Subscription"
-        verbose_name_plural = "User Subscriptions"
-        ordering = ["-start_date"]
+    payment_status = models.CharField(max_length=20, default='pending')  # pending, completed, failed
+    status = models.CharField(max_length=20, default='active')  # active, past_due, canceled
 
     def save(self, *args, **kwargs):
-        # auto-calculate end_date if missing
-        if not self.end_date:
-            duration_days = getattr(self.plan, "duration_days", 30)
-            self.end_date = self.start_date + timedelta(days=duration_days)
+        # Auto-set current_period_end if not provided
+        if not self.current_period_end:
+            # Example: default 30 days subscription
+            self.current_period_end = self.current_period_start + timezone.timedelta(days=30)
         super().save(*args, **kwargs)
 
-    def is_active(self):
-        return self.status == "active" and (self.end_date is None or self.end_date >= timezone.now())
-
     def __str__(self):
-        status = self.status.capitalize()
-        return f"{self.user.email} - {self.plan.name} ({status})"
+        return f"{self.user.email} - {self.plan_name} ({self.status})"

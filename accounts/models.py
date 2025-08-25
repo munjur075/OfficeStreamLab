@@ -79,6 +79,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     otp = models.CharField(max_length=6, blank=True)
     otp_expired = models.DateTimeField(null=True, blank=True)
     reset_secret_key = models.UUIDField(blank=True, null=True)
+    is_subscribe= models.BooleanField(default=False)
     is_affiliate = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

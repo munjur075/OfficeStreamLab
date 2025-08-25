@@ -1,110 +1,126 @@
-#
-import stripe, json
+# subscriptions/webhook.py
+import stripe
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
-from .models import UserSubscription
-from django.contrib.auth import get_user_model
 from django.utils import timezone
-from datetime import datetime
+from datetime import timedelta
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework import status
+from .models import UserSubscription, SubscriptionPlan
+from accounts.models import User
 
-User = get_user_model()
 stripe.api_key = settings.STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET = settings.STRIPE_WEBHOOK_SECRET
 
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    # print(payload)
-    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
-    except ValueError:
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError:
-        return HttpResponse(status=400)
+class StripeWebhookAPIView(APIView):
+    permission_classes = [AllowAny]
 
-    ev_type = event["type"]
-    obj = event["data"]["object"]
+    def post(self, request, *args, **kwargs):
+        payload = request.body
+        sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
 
-    # print(ev_type)
-    # print("---------------------------------------------------------------MRRRRR")
-    # print(obj)
-
-    # 1) Checkout completed -> subscription created
-    if ev_type == "checkout.session.completed":
-        print('SUccess-------------------------------------------------------')
-        # session contains 'subscription' and metadata if set
-        session = obj
-        subscription_id = session.get("subscription")
-        print(subscription_id,": IDDDDDDDDD")
-        metadata = session.get("metadata", {}) or session.get("subscription_data", {}).get("metadata", {})
-        # prefer metadata sent earlier
-        user_id = metadata.get("django_user_id")
-        plan = metadata.get("plan") or session.get("display_items", [{}])[0].get("plan", {}).get("nickname")
-        print("User_ID",user_id)
-
-        # fetch full subscription details
-        sub = stripe.Subscription.retrieve(subscription_id)
-        price_id = sub["items"]["data"][0]["price"]["id"]
-        # current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
-
-        # return HttpResponse(user_id)
-
-        if user_id:
-            print("Stripe webhook: Processing subscription for user", user_id)
-            try:
-                user = User.objects.get(id=int(user_id))
-
-                UserSubscription.objects.update_or_create(
-                    subscription_id=subscription_id,
-                    defaults={
-                        "user": user,
-                        "plan": "Basic",
-                        "payment_method": "stripe",
-                        "price": 30,
-                    },
-                )
-            except User.DoesNotExist:
-                print(f"⚠️ User with id {user_id} not found. Subscription not linked.")
-
-    # 2) Subscription updated/deleted or invoice events -> update DB
-    elif ev_type in ("customer.subscription.updated", "customer.subscription.deleted"):
-        print('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmm')
-        sub = obj
-        subscription_id = sub["id"]
         try:
-            s = UserSubscription.objects.get(subscription_id=subscription_id)
-            s.status = sub.get("status", s.status)
-            s.cancel_at_period_end = sub.get("cancel_at_period_end", s.cancel_at_period_end)
-            # try:
-            #     s.current_period_end = datetime.fromtimestamp(sub["current_period_end"], tz=timezone.utc)
-            # except Exception:
-            #     pass
-            s.save()
-        except UserSubscription.DoesNotExist:
-            # optionally create or log
-            pass
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, STRIPE_WEBHOOK_SECRET
+            )
+        except ValueError:
+            return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.SignatureVerificationError:
+            return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
 
-    elif ev_type == "invoice.payment_succeeded":
-        print('bbbbbbbbbbbbbbbbbbbbbbbb')
-        # update invoice / subscription status if needed
-        invoice = obj
-        subscription_id = invoice.get("subscription")
-        # mark subscription active, etc.
-        if subscription_id:
-            UserSubscription.objects.filter(subscription_id=subscription_id).update(status="active")
+        # Handle checkout session completed
+        if event["type"] == "checkout.session.completed":
+            session = event["data"]["object"]
+            subscription_id = session.get("subscription")
+            email = session.get("customer_email")  # use Stripe customer email
+            plan_name = session["metadata"].get("plan")
+            duration_days = int(session["metadata"].get("duration_days", 30))
+            limit_value = int(session["metadata"].get("limit_value", 0))
 
-    elif ev_type == "invoice.payment_failed":
-        print('ccccccccccccccccccccccccc,,')
-        invoice = obj
-        subscription_id = invoice.get("subscription")
-        if subscription_id:
-            UserSubscription.objects.filter(subscription_id=subscription_id).update(status="past_due")
+            handle_subscription_started(email, plan_name, duration_days, limit_value, subscription_id)
 
-    # Acknowledge receipt
-    return HttpResponse(status=200)
+        # Handle subscription renewal payment success
+        elif event["type"] == "invoice.payment_succeeded":
+            invoice = event["data"]["object"]
+            subscription_id = invoice.get("subscription")
+            email = invoice.get("customer_email")
+            handle_subscription_renewal(email, subscription_id)
+
+        # Handle payment failures
+        elif event["type"] == "invoice.payment_failed":
+            invoice = event["data"]["object"]
+            subscription_id = invoice.get("subscription")
+            email = invoice.get("customer_email")
+            handle_failed_payment(email, subscription_id)
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
 
 
-# 
+def handle_subscription_started(email, plan_name, duration_days, limit_value, subscription_id):
+    try:
+        user = User.objects.get(email=email)
+        user.is_subscribe = True
+        user.save()
+
+        # Get plan price from SubscriptionPlan
+        plan_obj = SubscriptionPlan.objects.filter(name=plan_name).first()
+        plan_price = plan_obj.price if plan_obj else 0
+
+        # Calculate period end
+        period_end = timezone.now() + timedelta(days=duration_days)
+
+        # Create or update subscription
+        subscription, created = UserSubscription.objects.update_or_create(
+            subscription_id=subscription_id,
+            defaults={
+                "user": user,
+                "plan_name": plan_name,
+                "price": plan_price,
+                "current_period_start": timezone.now(),
+                "current_period_end": period_end,
+                "limit_value": limit_value,
+                "payment_method": "stripe",
+                "status": "active",
+                "payment_status": "completed",
+                "cancel_at_period_end": False,
+            },
+        )
+
+        print(f"Subscription activated for user {email}.")
+    except User.DoesNotExist:
+        print(f"No user found with email {email}.")
+
+
+def handle_subscription_renewal(email, subscription_id):
+    try:
+        subscription = UserSubscription.objects.filter(subscription_id=subscription_id).first()
+        if subscription:
+            # Extend period by same duration as original plan
+            plan_obj = SubscriptionPlan.objects.filter(name=subscription.plan_name).first()
+            duration_days = plan_obj.duration_days if plan_obj else 30
+            subscription.current_period_start = timezone.now()
+            subscription.current_period_end = timezone.now() + timedelta(days=duration_days)
+            subscription.status = "active"
+            subscription.payment_status = "completed"
+            subscription.save()
+            print(f"Subscription renewed for user {email}.")
+        else:
+            print(f"No subscription found with ID {subscription_id} to renew.")
+    except Exception as e:
+        print(f"Error renewing subscription for {email}: {e}")
+
+
+def handle_failed_payment(email, subscription_id):
+    try:
+        subscription = UserSubscription.objects.filter(subscription_id=subscription_id).first()
+        if subscription:
+            subscription.payment_status = "failed"
+            subscription.status = "past_due"
+            subscription.save()
+            print(f"Payment failed for user {email}, subscription marked as past_due.")
+        else:
+            print(f"No subscription found with ID {subscription_id} for failed payment.")
+    except Exception as e:
+        print(f"Error handling failed payment for {email}: {e}")

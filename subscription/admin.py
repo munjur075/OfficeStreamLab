@@ -41,28 +41,26 @@ class PlanFeatureAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-# -------------------- PLAN FEATURE ASSIGNMENT INLINE --------------------
+# -------------------- PLAN FEATURE ASSIGNMENT --------------------
 class PlanFeatureAssignmentInline(admin.TabularInline):
     model = PlanFeatureAssignment
     extra = 1
+    verbose_name = "Feature Assignment"
+    verbose_name_plural = "Feature Assignments"
 
 
 # -------------------- SUBSCRIPTION PLAN --------------------
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'is_highlighted', 'limit_value', 'duration_days', 'created_at')
+    list_display = ('name', 'price', 'duration_days', 'limit_value', 'is_highlighted', 'created_at')
     search_fields = ('name',)
-    list_filter = ('is_highlighted',)
+    list_filter = ('is_highlighted', 'duration_days')
     inlines = [PlanFeatureAssignmentInline]
-    readonly_fields = ('created_at',)
 
 
-# -------------------- USER SUBSCRIPTIONS --------------------
+# -------------------- USER SUBSCRIPTION --------------------
+# admin.site.register(UserSubscription)
+
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'plan', 'payment_method', 'status', 'start_date', 'end_date')
-    list_filter = ('status', 'payment_method')
-    search_fields = ('user__email', 'plan__name')
-    readonly_fields = ('start_date', 'end_date')
-    ordering = ('-start_date',)
-
+    list_display = ('user', 'plan_name', 'payment_method', 'subscription_id', 'price', 'used_value', 'free_used_value', 'limit_value', 'current_period_start', 'current_period_end', 'cancel_at_period_end', 'payment_status', 'status',)
