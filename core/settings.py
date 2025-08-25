@@ -65,6 +65,9 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
 
+    #PayPal
+    'paypal.standard.ipn',
+
     # Custom apps
     'accounts',
     'movie',
@@ -214,6 +217,11 @@ STRIPE_PRICE_ELITE = os.getenv("STRIPE_PRICE_ELITE")
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 # STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+
+#PayPal
+PAYPAL_TEST = True
+PAYPAL_RECEIVER_EMAIL = 'sb-u47h43j45194681@business.example.com' # where cash is paid into
 
 CSRF_TRUSTED_ORIGINS = [
     'https://equal-evidently-terrier.ngrok-free.app',

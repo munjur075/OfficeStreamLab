@@ -23,5 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/flims/', include('movie.urls')),
-    path("api/payment/", include(("subscription.urls", "subscription"), namespace="subscription")),
+    path('api/payment/', include(('subscription.urls', 'subscription'), namespace='subscription')),
+    path('api/payment/paypal-ipn/', include('paypal.standard.ipn.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
