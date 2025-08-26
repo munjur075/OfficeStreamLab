@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from accounts.models import User
 
 from .models import UserSubscription, SubscriptionPlan
 import paypalrestsdk
@@ -106,23 +107,35 @@ class ExecutePaypalPaymentView(APIView):
         except Exception as e:
             return Response({"error": f"Payment not found: {str(e)}"}, status=400)
 
+        # If user cancelled (missing PayerID)
         if not payer_id:
-            # Treat missing payer_id as cancel
-            UserSubscription.objects.filter(subscription_id=payment_id, payment_status="pending").update(
-                payment_status="Failed", status="canceled"
-            )
+            UserSubscription.objects.filter(
+                subscription_id=payment_id, payment_status="pending"
+            ).update(payment_status="Failed", status="canceled")
             return Response({"status": "cancelled", "message": "User cancelled at PayPal."}, status=200)
 
+        # If payment execution success
         if payment.execute({"payer_id": payer_id}):
-            UserSubscription.objects.filter(subscription_id=payment_id).update(
-                payment_status="completed", status="active"
-            )
-            return JsonResponse({"status": "success", "message": "Subscription activated successfully!"})
-        else:
-            UserSubscription.objects.filter(subscription_id=payment_id).update(
-                payment_status="Failed", status="canceled"
-            )
-            return Response({"error": payment.error}, status=400)
+            try:
+                subscription = UserSubscription.objects.select_related("user").get(subscription_id=payment_id)
+                subscription.payment_status = "completed"
+                subscription.status = "active"
+                subscription.save()
+
+                # Mark user as subscribed
+                subscription.user.is_subscribe = True
+                subscription.user.save()
+
+                return JsonResponse({"status": "success", "message": "Subscription activated successfully!"})
+
+            except UserSubscription.DoesNotExist:
+                return Response({"error": "Subscription record not found."}, status=404)
+
+        # If execution failed
+        UserSubscription.objects.filter(subscription_id=payment_id).update(
+            payment_status="Failed", status="canceled"
+        )
+        return Response({"error": payment.error}, status=400)
 
 
 # -------------------- CANCEL PAYMENT --------------------
