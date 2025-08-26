@@ -220,8 +220,11 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 
 #PayPal
-PAYPAL_TEST = True
-PAYPAL_RECEIVER_EMAIL = 'sb-u47h43j45194681@business.example.com' # where cash is paid into
+# PAYPAL_TEST = True
+# PAYPAL_RECEIVER_EMAIL = 'sb-u47h43j45194681@business.example.com' # where cash is paid into
+PAYPAL_CLIENT_ID = "ASz00DmJkxuQ75fQEuifFOdsCQth58evy6G82OqMuvXq8IEysYI28wWftFKDzx0htpRuBTttnl3K8Ynk"
+PAYPAL_CLIENT_SECRET = "EK3qr2n7kBdljYjLaVVNNKcHxzpu8S9sX0lkh4eYLtWUSf30cN04gkkv3DTi_waqyw3-5TKhBlW8xJZs"
+
 
 CSRF_TRUSTED_ORIGINS = [
     'https://equal-evidently-terrier.ngrok-free.app',

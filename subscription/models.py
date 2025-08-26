@@ -176,6 +176,7 @@ class UserSubscription(models.Model):
     plan_name = models.CharField(max_length=100, default='Basic')  # reference only
     payment_method = models.CharField(max_length=50, default='stripe')  # e.g., 'stripe', 'paypal', etc.
     subscription_id = models.CharField(max_length=255, unique=True)  # Stripe subscription ID
+    paypal_token = models.CharField(max_length=255, blank=True, null=True)  # EC-XXX token
     price = models.DecimalField(max_digits=10, decimal_places=2)
     
     used_value = models.PositiveIntegerField(default=0)         # actual usage count
@@ -186,7 +187,7 @@ class UserSubscription(models.Model):
     current_period_end = models.DateTimeField(blank=True, null=True)  # from Stripe
     
     cancel_at_period_end = models.BooleanField(default=False)
-    payment_status = models.CharField(max_length=20, default='pending')  # pending, completed, failed
+    payment_status = models.CharField(max_length=20, default='Pending')  # pending, completed, failed
     status = models.CharField(max_length=20, default='active')  # active, past_due, canceled
 
     def save(self, *args, **kwargs):

@@ -1,7 +1,8 @@
 # subscriptions/urls.py
 from django.urls import path
-from .views import CreateCheckoutSessionView, checkout_success, checkout_cancel, PaypalCheckOutView, PaymentSuccessful, PaymentFailed
+from .views import CreateCheckoutSessionView, checkout_success, checkout_cancel
 from .webhook import StripeWebhookAPIView
+from .paypal import *
 
 app_name = "subscription"
 
@@ -16,7 +17,7 @@ urlpatterns = [
     path("webhook/", StripeWebhookAPIView.as_view(), name="stripe_webhook"),
 
     # ---------- PayPal ----------
-    path("paypal/checkout/", PaypalCheckOutView.as_view(), name="paypal_checkout"),
-    path("paypal-checkout-success/", PaymentSuccessful, name="paypal-checkout-success"),
-    path("paypal-checkout-failed/", PaymentFailed, name="paypal-checkout-failed"),
+    path("paypal-checkcout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_create"),
+    path("paypal/execute/", ExecutePaypalPaymentView.as_view(), name="paypal_execute"),
+    path("paypal/cancel/", paypal_cancel, name="paypal_cancel"),
 ]
