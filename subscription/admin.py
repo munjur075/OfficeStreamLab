@@ -63,4 +63,4 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
 
 @admin.register(UserSubscription)
 class UserSubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('user', 'plan_name', 'payment_method', 'subscription_id', 'price', 'used_value', 'free_used_value', 'limit_value', 'current_period_start', 'current_period_end', 'cancel_at_period_end', 'payment_status', 'status',)
+    list_display = ('user', 'plan_name', 'payment_method', 'subscription_id', 'price', 'used_value', 'free_used_value', 'limit_value', 'current_period_start', 'current_period_end', 'payment_status', 'status',)
