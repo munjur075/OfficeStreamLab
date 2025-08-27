@@ -139,7 +139,7 @@ class ExecutePaypalPaymentView(APIView):
 
 
 # -------------------- CANCEL PAYMENT --------------------
-def paypal_cancel(request):
+def paypal_cancel_view(request):
     token = request.GET.get("token")
 
     if token:

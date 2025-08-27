@@ -59,7 +59,7 @@ class CreateReelBuxCheckoutView(APIView):
             current_period_start=timezone.now(),
             current_period_end=timezone.now() + timedelta(days=duration_days),
             cancel_at_period_end=False,
-            payment_status="paid",
+            payment_status="completed",
             status="active",
         )
 

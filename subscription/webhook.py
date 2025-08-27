@@ -1,4 +1,4 @@
-# subscriptions/webhook.py
+
 import stripe
 from django.conf import settings
 from django.utils import timezone
@@ -14,7 +14,7 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET = settings.STRIPE_WEBHOOK_SECRET
 
 
-class StripeWebhookAPIView(APIView):
+class StripeWebhookSubscriptionView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
@@ -53,7 +53,7 @@ class StripeWebhookAPIView(APIView):
             invoice = event["data"]["object"]
             subscription_id = invoice.get("subscription")
             email = invoice.get("customer_email")
-            handle_failed_payment(email, subscription_id)
+            handle_subscription_payment_failed(email, subscription_id)
 
         return Response({"status": "success"}, status=status.HTTP_200_OK)
 
@@ -112,7 +112,7 @@ def handle_subscription_renewal(email, subscription_id):
         print(f"Error renewing subscription for {email}: {e}")
 
 
-def handle_failed_payment(email, subscription_id):
+def handle_subscription_payment_failed(email, subscription_id):
     try:
         subscription = UserSubscription.objects.filter(subscription_id=subscription_id).first()
         if subscription:

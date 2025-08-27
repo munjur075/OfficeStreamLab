@@ -1,4 +1,4 @@
-# subscriptions/views.py
+
 import json
 import stripe
 from django.conf import settings
@@ -36,7 +36,7 @@ class CreateCheckoutSessionView(APIView):
         price_map = {
             "Basic": settings.STRIPE_PRICE_BASIC,
             "Pro": settings.STRIPE_PRICE_PRO,
-            "Enterprise": settings.STRIPE_PRICE_ELITE,
+            "Elite": settings.STRIPE_PRICE_ELITE,
         }
         price_id = price_map.get(plan)
         # print(price_id)
@@ -50,8 +50,8 @@ class CreateCheckoutSessionView(APIView):
                 line_items=[{"price": price_id, "quantity": 1}],
                 customer_email=request.user.email,
                 metadata= {"user_id": str(request.user.id), "plan": plan, "duration_days": int(duration_days), "limit_value": int(limit_value)},
-                success_url=request.build_absolute_uri(reverse("subscription:checkout_success")) + "?session_id={CHECKOUT_SESSION_ID}",
-                cancel_url=request.build_absolute_uri(reverse("subscription:checkout_cancel")),
+                success_url=request.build_absolute_uri(reverse("subscription:stripe_checkout_success")) + "?session_id={CHECKOUT_SESSION_ID}",
+                cancel_url=request.build_absolute_uri(reverse("subscription:stripe_checkout_cancel")),
             )
             # print(session)
         except Exception as e:
@@ -79,15 +79,13 @@ class CreateCheckoutSessionView(APIView):
         )
 
 
-
-
-def checkout_success(request):
+def stripe_checkout_success_view(request):
     return JsonResponse({
         "status": "success",
         "message": "Subscription successful! You can now access premium features."
     })
 
-def checkout_cancel(request):
+def stripe_checkout_cancel_view(request):
     return JsonResponse({
         "status": "cancelled",
         "message": "Subscription process was cancelled. You can try again anytime."

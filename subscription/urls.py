@@ -1,27 +1,32 @@
 # subscriptions/urls.py
 from django.urls import path
-from .views import CreateCheckoutSessionView, checkout_success, checkout_cancel
-from .webhook import StripeWebhookAPIView
-from .paypal import *
-from .ai_subscriptions import *
+from .views import CreateCheckoutSessionView, stripe_checkout_success_view, stripe_checkout_cancel_view
+from .webhook import StripeWebhookSubscriptionView
+from .paypal import CreatePaypalCheckoutView, ExecutePaypalPaymentView, paypal_cancel_view
+from .ai_subscriptions import CreateReelBuxCheckoutView
+# from .add_funds import StripeAddFundsView, stripe_add_funds_webhook_view
 
 app_name = "subscription"
 
 urlpatterns = [
-    # Stripe checkout session
-    path("create-checkout-session/", CreateCheckoutSessionView.as_view(), name="create_checkout_session"),
+    # ================== STRIPE ==================
+    # Checkout session (subscriptions)
+    path("stripe/create-checkout-session/", CreateCheckoutSessionView.as_view(), name="stripe_create_checkout_session"),
+    path("stripe/checkout-success/", stripe_checkout_success_view, name="stripe_checkout_success"),
+    path("stripe/checkout-cancel/", stripe_checkout_cancel_view, name="stripe_checkout_cancel"),
 
-    # Checkout success/cancel redirects
-    path("checkout-success/", checkout_success, name="checkout_success"),
-    path("checkout-cancel/", checkout_cancel, name="checkout_cancel"),
-    # Stripe webhook endpoint
-    path("webhook/", StripeWebhookAPIView.as_view(), name="stripe_webhook"),
+    # Webhooks
+    path("stripe/webhook/subscription/", StripeWebhookSubscriptionView.as_view(), name="stripe_subscription_webhook"),
+    # path("stripe/webhook/add-funds/", stripe_add_funds_webhook_view, name="stripe_add_funds_webhook"),
 
-    # ---------- PayPal ----------
-    path("paypal-checkcout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_create"),
+    # Add funds (wallet top-up)
+    # path("stripe/add-funds/", StripeAddFundsView.as_view(), name="stripe_add_funds"),
+
+    # ================== PAYPAL ==================
+    path("paypal/checkout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_checkout_create"),
     path("paypal/execute/", ExecutePaypalPaymentView.as_view(), name="paypal_execute"),
-    path("paypal/cancel/", paypal_cancel, name="paypal_cancel"),
+    path("paypal/cancel/", paypal_cancel_view, name="paypal_cancel"),
 
-    # ---------- ReelBux ----------
-    path("reelbux-checkcout-create/", CreateReelBuxCheckoutView.as_view(), name="reelbux_create"),
+    # ================== REELBUX ==================
+    path("reelbux/checkout-create/", CreateReelBuxCheckoutView.as_view(), name="reelbux_checkout_create"),
 ]
