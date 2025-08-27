@@ -1,10 +1,11 @@
-# subscriptions/urls.py
+
 from django.urls import path
 from .views import CreateCheckoutSessionView, stripe_checkout_success_view, stripe_checkout_cancel_view
 from .webhook import StripeWebhookSubscriptionView
+from .add_funds_webhook import StripeWebhookAddFundsView
 from .paypal import CreatePaypalCheckoutView, ExecutePaypalPaymentView, paypal_cancel_view
 from .ai_subscriptions import CreateReelBuxCheckoutView
-# from .add_funds import StripeAddFundsView, stripe_add_funds_webhook_view
+from .add_funds import CreateAddFundsCheckoutSessionView, stripe_add_funds_checkout_success_view, stripe_add_funds_checkout_cancel_view
 
 app_name = "subscription"
 
@@ -17,10 +18,12 @@ urlpatterns = [
 
     # Webhooks
     path("stripe/webhook/subscription/", StripeWebhookSubscriptionView.as_view(), name="stripe_subscription_webhook"),
-    # path("stripe/webhook/add-funds/", stripe_add_funds_webhook_view, name="stripe_add_funds_webhook"),
+    path("stripe/webhook/add-funds/", StripeWebhookAddFundsView.as_view(), name="stripe_add_funds_webhook"),
 
     # Add funds (wallet top-up)
-    # path("stripe/add-funds/", StripeAddFundsView.as_view(), name="stripe_add_funds"),
+    path("stripe/create-add-funds-checkout-session/", CreateAddFundsCheckoutSessionView.as_view(), name="stripe_create_add_funds_checkout_session"),
+    path("stripe/checkout-add-funds-success/", stripe_add_funds_checkout_success_view, name="stripe_add_funds_checkout_success"),
+    path("stripe/checkout-add-funds-cancel/", stripe_add_funds_checkout_cancel_view, name="stripe_add_funds_checkout_cancel"),
 
     # ================== PAYPAL ==================
     path("paypal/checkout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_checkout_create"),
