@@ -1,11 +1,11 @@
 
 from django.urls import path
 from .views import CreateCheckoutSessionView, stripe_checkout_success_view, stripe_checkout_cancel_view
-from .webhook import StripeWebhookSubscriptionView
-from .add_funds_webhook import StripeWebhookAddFundsView
-from .paypal import CreatePaypalCheckoutView, ExecutePaypalPaymentView, paypal_cancel_view
-from .ai_subscriptions import CreateReelBuxCheckoutView
-from .add_funds import CreateAddFundsCheckoutSessionView, stripe_add_funds_checkout_success_view, stripe_add_funds_checkout_cancel_view
+from .stripe_webhook_for_subscriptions import StripeWebhookSubscriptionView
+from .stripe_webhook_for_add_funds import StripeWebhookAddFundsView
+from .paypal_for_subscriptions import CreatePaypalCheckoutView, ExecutePaypalPaymentView, paypal_cancel_view
+from .reelbux_for_subscriptions import CreateReelBuxCheckoutView
+from .stripe_add_funds import CreateAddFundsCheckoutSessionView, stripe_add_funds_checkout_success_view, stripe_add_funds_checkout_cancel_view
 
 app_name = "subscription"
 
