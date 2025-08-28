@@ -1,4 +1,4 @@
-
+import uuid
 from decimal import Decimal
 from django.db import transaction
 from rest_framework.views import APIView
@@ -36,6 +36,9 @@ class TransferDistroToReelBuxAPIView(APIView):
             return Response({"error": "Insufficient distro balance."}, status=status.HTTP_400_BAD_REQUEST)
 
         with transaction.atomic():
+            # Generate a single transfer ID
+            transfer_id = f"reelbux_{uuid.uuid4().hex[:16]}"
+
             # Deduct from distro
             wallet.distro_balance -= amount
 
@@ -49,6 +52,7 @@ class TransferDistroToReelBuxAPIView(APIView):
                 source="distro",
                 tx_type="transfer",
                 amount=amount,
+                txn_id=transfer_id,   # <-- same ID for both
                 balance_type="distro",
                 status="success",
                 description=f"Transferred {amount} from Distro to ReelBux",
@@ -57,9 +61,10 @@ class TransferDistroToReelBuxAPIView(APIView):
             # Log transaction - credit to reelbux
             Transaction.objects.create(
                 user=user,
-                source="reelbux",
-                tx_type="transfer",
+                source="distro",
+                tx_type="fund",
                 amount=amount,
+                txn_id=transfer_id,   # <-- same ID for both
                 balance_type="reelbux",
                 status="success",
                 description=f"Received {amount} from Distro",
@@ -68,7 +73,7 @@ class TransferDistroToReelBuxAPIView(APIView):
         return Response(
             {
                 "message": "Transfer successful",
-                "amount": str(amount),
+                "transfer_amount": str(amount),
                 "new_balances": {
                     "distro_balance": str(wallet.distro_balance),
                     "reel_bux_balance": str(wallet.reel_bux_balance),
