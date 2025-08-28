@@ -19,7 +19,7 @@ class WalletAdmin(admin.ModelAdmin):
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('user', 'tx_type', 'amount', 'balance_type', 'status', 'source', 'created_at')
     list_filter = ('tx_type', 'status', 'balance_type', 'source')
-    search_fields = ('user__email', 'reference_id')
+    search_fields = ('user__email', 'txn_id')
     readonly_fields = ('created_at',)
     ordering = ('-created_at',)
 
@@ -29,7 +29,7 @@ class TransactionAdmin(admin.ModelAdmin):
 class WithdrawalAdmin(admin.ModelAdmin):
     list_display = ('user', 'amount', 'status', 'transaction', 'requested_at', 'processed_at')
     list_filter = ('status',)
-    search_fields = ('user__email', 'transaction__reference_id')
+    search_fields = ('user__email', 'transaction__txn_id')
     readonly_fields = ('requested_at', 'processed_at')
     ordering = ('-requested_at',)
 

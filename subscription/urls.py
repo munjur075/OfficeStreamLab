@@ -7,6 +7,7 @@ from .paypal_for_subscriptions import CreatePaypalCheckoutView, ExecutePaypalPay
 from .reelbux_for_subscriptions import CreateReelBuxCheckoutView
 from .stripe_add_funds import CreateAddFundsCheckoutSessionView, stripe_add_funds_checkout_success_view, stripe_add_funds_checkout_cancel_view
 from .paypal_for_add_funds import*
+from .transfer_distro_to_reelbux import TransferDistroToReelBuxAPIView
 
 app_name = "subscription"
 
@@ -39,4 +40,5 @@ urlpatterns = [
 
     # ================== REELBUX ==================
     path("reelbux/checkout-create/", CreateReelBuxCheckoutView.as_view(), name="reelbux_checkout_create"),
+    path("transfer/distro-to-reelbux/", TransferDistroToReelBuxAPIView.as_view(), name="transfer_distro_reelbux"),
 ]

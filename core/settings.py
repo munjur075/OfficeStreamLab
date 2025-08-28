@@ -65,9 +65,6 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
 
-    #PayPal
-    'paypal.standard.ipn',
-
     # Custom apps
     'accounts',
     'movie',

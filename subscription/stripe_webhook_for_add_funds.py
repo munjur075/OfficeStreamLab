@@ -47,7 +47,7 @@ class StripeWebhookAddFundsView(APIView):
                     amount=Decimal(amount),
                     balance_type="reelbux",
                     status="success",
-                    reference_id=payment_id,
+                    txn_id=payment_id,
                     description=f"Wallet top-up via {payment_method}"
                 )
 
@@ -72,7 +72,7 @@ class StripeWebhookAddFundsView(APIView):
                     amount=Decimal(amount),
                     balance_type="reelbux",
                     status="failed",
-                    reference_id=payment_id,
+                    txn_id=payment_id,
                     description=f"Failed wallet top-up via {payment_method}"
                 )
                 print(f"Failed payment recorded for {email}")

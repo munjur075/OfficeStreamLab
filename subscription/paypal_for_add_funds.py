@@ -68,7 +68,7 @@ class CreatePaypalAddFundsView(APIView):
                 amount=Decimal(amount),
                 balance_type="reelbux",
                 status="pending",   # always start as pending
-                reference_id=payment.id,  # PayPal payment ID
+                txn_id=payment.id,  # PayPal payment ID
                 paypal_token=token,
                 description=f"Wallet top-up via {payment_method}"
             )
@@ -98,7 +98,7 @@ class ExecutePaypalAddFundsView(APIView):
         # Cancel case (missing payer_id)
         if not payer_id:
             Transaction.objects.filter(
-                reference_id=payment_id, status="pending"
+                txn_id=payment_id, status="pending"
             ).update(status="failed")
             return Response(
                 {"status": "cancelled", "message": "User cancelled at PayPal."},
@@ -108,7 +108,7 @@ class ExecutePaypalAddFundsView(APIView):
         # Execute PayPal payment
         if payment.execute({"payer_id": payer_id}):
             try:
-                transaction = Transaction.objects.select_related("user").get(reference_id=payment_id)
+                transaction = Transaction.objects.select_related("user").get(txn_id=payment_id)
                 transaction.status = "success"
                 transaction.save()
 
@@ -126,7 +126,7 @@ class ExecutePaypalAddFundsView(APIView):
                 return Response({"message": "Transaction record not found."}, status=404)
 
         # Failed execution
-        Transaction.objects.filter(reference_id=payment_id).update(status="failed")
+        Transaction.objects.filter(txn_id=payment_id).update(status="failed")
         return Response({"message": payment.error}, status=400)
 
 
