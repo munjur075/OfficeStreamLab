@@ -64,6 +64,7 @@ class Transaction(models.Model):
     balance_type = models.CharField(max_length=20, choices=BALANCE_CHOICES, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     reference_id = models.CharField(max_length=100, blank=True, help_text="Stripe/PayPal TXN ID")
+    paypal_token = models.CharField(max_length=255, blank=True, null=True)  # EC-XXX token
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

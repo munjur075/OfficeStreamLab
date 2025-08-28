@@ -6,6 +6,7 @@ from .stripe_webhook_for_add_funds import StripeWebhookAddFundsView
 from .paypal_for_subscriptions import CreatePaypalCheckoutView, ExecutePaypalPaymentView, paypal_cancel_view
 from .reelbux_for_subscriptions import CreateReelBuxCheckoutView
 from .stripe_add_funds import CreateAddFundsCheckoutSessionView, stripe_add_funds_checkout_success_view, stripe_add_funds_checkout_cancel_view
+from .paypal_for_add_funds import*
 
 app_name = "subscription"
 
@@ -26,9 +27,15 @@ urlpatterns = [
     path("stripe/checkout-add-funds-cancel/", stripe_add_funds_checkout_cancel_view, name="stripe_add_funds_checkout_cancel"),
 
     # ================== PAYPAL ==================
-    path("paypal/checkout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_checkout_create"),
+    # (subscriptions)
+    path("paypal/checkout-create/", CreatePaypalCheckoutView.as_view(), name="paypal_create_checkout"),
     path("paypal/execute/", ExecutePaypalPaymentView.as_view(), name="paypal_execute"),
     path("paypal/cancel/", paypal_cancel_view, name="paypal_cancel"),
+
+    # Add funds (wallet top-up)
+    path("paypal/create-addfunds-checkout/", CreatePaypalAddFundsView.as_view(), name="paypal_create_addfunds_checkout"),
+    path("paypal/addfunds-execute/", ExecutePaypalAddFundsView.as_view(), name="paypal_addfunds_execute"),
+    path("paypal/addfunds-cancel/", paypal_addfunds_cancel_view, name="paypal_addfunds_cancel"),
 
     # ================== REELBUX ==================
     path("reelbux/checkout-create/", CreateReelBuxCheckoutView.as_view(), name="reelbux_checkout_create"),
