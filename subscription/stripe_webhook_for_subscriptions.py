@@ -26,9 +26,9 @@ class StripeWebhookSubscriptionView(APIView):
                 payload, sig_header, STRIPE_WEBHOOK_SECRET
             )
         except ValueError:
-            return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
         except stripe.error.SignatureVerificationError:
-            return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Handle checkout session completed
         if event["type"] == "checkout.session.completed":

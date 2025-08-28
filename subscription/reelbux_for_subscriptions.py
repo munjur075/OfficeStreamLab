@@ -31,18 +31,18 @@ class CreateReelBuxCheckoutView(APIView):
         # Get plan
         plan = SubscriptionPlan.objects.filter(name=plan_name).first()
         if not plan:
-            return Response({"error": "Invalid plan"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid plan"}, status=status.HTTP_400_BAD_REQUEST)
 
         subscription_price = plan.price
 
         # Get wallet
         wallet = getattr(user, "wallet", None)
         if not wallet:
-            return Response({"error": "Wallet not found"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Wallet not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check balance
         if wallet.reel_bux_balance < subscription_price:
-            return Response({"error": "Insufficient ReelBux balance"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Insufficient ReelBux balance"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Deduct balance
         wallet.reel_bux_balance -= subscription_price

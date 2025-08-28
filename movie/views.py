@@ -89,7 +89,7 @@ class FilmUploadView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @csrf_exempt
@@ -99,7 +99,7 @@ def cloudinary_webhook(request):
     Ensures multi-resolution streaming works in production.
     """
     if request.method != "POST":
-        return JsonResponse({"error": "Invalid method"}, status=400)
+        return JsonResponse({"message": "Invalid method"}, status=400)
 
     try:
         payload = json.loads(request.body)
@@ -117,7 +117,7 @@ def cloudinary_webhook(request):
             film = Film.objects.get(full_film_public_id=public_id)
 
         if not film:
-            return JsonResponse({"error": "Film not found"}, status=404)
+            return JsonResponse({"message": "Film not found"}, status=404)
 
         if resource_type == "video":
             if duration:
@@ -130,7 +130,7 @@ def cloudinary_webhook(request):
         return JsonResponse({"status": "success", "film_id": film.id})
 
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+        return JsonResponse({"message": str(e)}, status=400)
 
 # For HLS Testing by Frontend
 def film_detail(request, film_id):
@@ -229,7 +229,7 @@ class FilmPlayView(APIView):
         try:
             film = Film.objects.get(id=film_id)
         except Film.DoesNotExist:
-            return Response({"error": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             FilmView.objects.create(film=film, viewer=viewer)

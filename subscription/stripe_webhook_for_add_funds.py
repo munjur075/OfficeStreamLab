@@ -22,7 +22,7 @@ class StripeWebhookAddFundsView(APIView):
         try:
             event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
         except (ValueError, stripe.error.SignatureVerificationError):
-            return Response({"error": "Invalid payload or signature"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Invalid payload or signature"}, status=status.HTTP_400_BAD_REQUEST)
 
         # ✅ SUCCESS
         if event["type"] == "checkout.session.completed":

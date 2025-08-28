@@ -20,9 +20,9 @@ class CreateAddFundsCheckoutSessionView(APIView):
         payment_method = "stripe"
         
         if not amount:
-            return Response({"error": "Required amount"}, status=400)
+            return Response({"message": "Required amount"}, status=400)
         # if not payment_method:
-        #     return Response({"error": "Select payment method"}, status=400)
+        #     return Response({"message": "Select payment method"}, status=400)
 
         try:
             checkout_session = stripe.checkout.Session.create(
@@ -48,7 +48,7 @@ class CreateAddFundsCheckoutSessionView(APIView):
 
             # print(session)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"message": str(e)}, status=500)
 
         return Response({
         "sessionId": checkout_session.id,

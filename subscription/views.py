@@ -30,7 +30,7 @@ class CreateCheckoutSessionView(APIView):
         limit_value = data.get("limit_value", 0)
         plan_name = SubscriptionPlan.objects.filter(name=plan).first()
         if not plan_name:
-            return Response({"error": "invalid plan"}, status=400)
+            return Response({"message": "invalid plan"}, status=400)
 
         price_map = {
             "Basic": settings.STRIPE_PRICE_BASIC,
@@ -40,7 +40,7 @@ class CreateCheckoutSessionView(APIView):
         price_id = price_map.get(plan)
         # print(price_id)
         if not price_id:
-            return Response({"error": "invalid plan"}, status=400)
+            return Response({"message": "invalid plan"}, status=400)
 
         try:
             checkout_session = stripe.checkout.Session.create(
@@ -54,7 +54,7 @@ class CreateCheckoutSessionView(APIView):
             )
             # print(session)
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"message": str(e)}, status=500)
 
         return Response({
         "sessionId": checkout_session.id,
@@ -67,7 +67,7 @@ class CreateCheckoutSessionView(APIView):
 
         if not subscription_details:
             return Response(
-                {"status": "error", "message": "No subscription found for this user."},
+                {"status": "message", "message": "No subscription found for this user."},
                 status=status.HTTP_404_NOT_FOUND
             )
 

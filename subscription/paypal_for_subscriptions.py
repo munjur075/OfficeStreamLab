@@ -39,7 +39,7 @@ class CreatePaypalCheckoutView(APIView):
 
         plan = SubscriptionPlan.objects.filter(name=plan_name).first()
         if not plan:
-            return Response({"error": "Invalid plan"}, status=400)
+            return Response({"message": "Invalid plan"}, status=400)
 
         subscription_price = plan.price
         total_str = f"{subscription_price:.2f}"
@@ -87,7 +87,7 @@ class CreatePaypalCheckoutView(APIView):
             )
             return Response({"approvalUrl": approval_url})
 
-        return Response({"error": payment.error}, status=500)
+        return Response({"message": payment.error}, status=500)
 
 
 # -------------------- EXECUTE PAYMENT --------------------
@@ -100,12 +100,12 @@ class ExecutePaypalPaymentView(APIView):
         payer_id = request.query_params.get("PayerID")
 
         if not payment_id:
-            return Response({"error": "Missing paymentId"}, status=400)
+            return Response({"message": "Missing paymentId"}, status=400)
 
         try:
             payment = paypalrestsdk.Payment.find(payment_id)
         except Exception as e:
-            return Response({"error": f"Payment not found: {str(e)}"}, status=400)
+            return Response({"message": f"Payment not found: {str(e)}"}, status=400)
 
         # If user cancelled (missing PayerID)
         if not payer_id:
@@ -129,13 +129,13 @@ class ExecutePaypalPaymentView(APIView):
                 return JsonResponse({"status": "success", "message": "Subscription activated successfully!"})
 
             except UserSubscription.DoesNotExist:
-                return Response({"error": "Subscription record not found."}, status=404)
+                return Response({"message": "Subscription record not found."}, status=404)
 
         # If execution failed
         UserSubscription.objects.filter(subscription_id=payment_id).update(
             payment_status="Failed", status="canceled"
         )
-        return Response({"error": payment.error}, status=400)
+        return Response({"message": payment.error}, status=400)
 
 
 # -------------------- CANCEL PAYMENT --------------------

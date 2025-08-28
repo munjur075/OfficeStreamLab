@@ -29,7 +29,7 @@ class CreatePaypalAddFundsView(APIView):
         payment_method = "paypal"
 
         if amount <= 0:
-            return Response({"error": "Invalid amount"}, status=400)
+            return Response({"message": "Invalid amount"}, status=400)
 
         # Create PayPal Payment
         payment = paypalrestsdk.Payment({
@@ -75,7 +75,7 @@ class CreatePaypalAddFundsView(APIView):
 
             return Response({"approvalUrl": approval_url})
 
-        return Response({"error": payment.error}, status=500)
+        return Response({"message": payment.error}, status=500)
 
 
 # -------------------- EXECUTE ADD FUNDS --------------------
@@ -88,12 +88,12 @@ class ExecutePaypalAddFundsView(APIView):
         payer_id = request.query_params.get("PayerID")
 
         if not payment_id:
-            return Response({"error": "Missing paymentId"}, status=400)
+            return Response({"message": "Missing paymentId"}, status=400)
 
         try:
             payment = paypalrestsdk.Payment.find(payment_id)
         except Exception as e:
-            return Response({"error": f"Payment not found: {str(e)}"}, status=400)
+            return Response({"message": f"Payment not found: {str(e)}"}, status=400)
 
         # Cancel case (missing payer_id)
         if not payer_id:
@@ -123,11 +123,11 @@ class ExecutePaypalAddFundsView(APIView):
                 })
 
             except Transaction.DoesNotExist:
-                return Response({"error": "Transaction record not found."}, status=404)
+                return Response({"message": "Transaction record not found."}, status=404)
 
         # Failed execution
         Transaction.objects.filter(reference_id=payment_id).update(status="failed")
-        return Response({"error": payment.error}, status=400)
+        return Response({"message": payment.error}, status=400)
 
 
 # -------------------- CANCEL ADD FUNDS --------------------
