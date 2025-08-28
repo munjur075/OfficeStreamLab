@@ -63,7 +63,8 @@ class Film(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    views_count = models.PositiveIntegerField(default=0)
+    unique_views = models.PositiveIntegerField(default=0)   # distinct viewers
+    total_views = models.PositiveIntegerField(default=0)    # every play
     total_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     # Fields for multi-resolution HLS URLs

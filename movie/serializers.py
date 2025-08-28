@@ -6,7 +6,7 @@ class FilmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Film
         fields = "__all__"
-        read_only_fields = ("trailer_hls_url", "film_hls_url", "film_duration_s", "status", "views", "total_earning")
+        read_only_fields = ("trailer_hls_url", "film_hls_url", "film_duration_s", "status", "ivews", "total_earning")
 
 
 class FilmListSerializer(serializers.ModelSerializer):

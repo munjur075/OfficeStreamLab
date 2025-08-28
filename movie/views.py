@@ -168,7 +168,7 @@ class FilmDetailsView(APIView):
             "rental_hours": film.rental_hours,
             "buy_price": film.buy_price,
             "full_film_duration": film.full_film_duration,
-            "views_count": film.views_count,
+            "unique_views": film.unique_views,
             "total_earning": film.total_earning,
             "trailer_hls_url": film.trailer_hls_url,
         }
@@ -201,7 +201,7 @@ class FilmDetailsView(APIView):
                 "rental_hours": f.rental_hours,
                 "buy_price": f.buy_price,
                 "full_film_duration": f.full_film_duration,
-                "views_count": f.views_count,
+                "unique_views": f.unique_views,
                 "total_earning": f.total_earning,
                 "trailer_hls_url": f.trailer_hls_url,
             }
@@ -225,25 +225,28 @@ class FilmPlayView(APIView):
 
     def post(self, request, film_id):
         viewer = request.user
-        print(viewer)
         try:
             film = Film.objects.get(id=film_id)
         except Film.DoesNotExist:
             return Response({"message": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Always increment total views
+        film.total_views += 1
+
         try:
+            # Try to add a unique view
             FilmView.objects.create(film=film, viewer=viewer)
-           
-            film.views_count += 1
-            film.save()
-            
+            film.unique_views += 1
         except IntegrityError:
-            # already viewedpytho
+            # viewer already counted in unique views
             pass
+
+        film.save()
 
         return Response({
             "message": "View recorded",
-            "views_count": film.views_count
+            "unique_views": film.unique_views,
+            "total_views": film.total_views
         })
 
 
@@ -252,13 +255,13 @@ class FilmPlayView(APIView):
 class TrendingFilmsView(APIView):
     def get(self, request):
         # Get top trending published films by views
-        trending_films = Film.objects.filter(status="PUBLISHED").order_by('-views_count')[:10]
+        trending_films = Film.objects.filter(status="PUBLISHED").order_by('-unique_views')[:10]
 
         trending_data = [
             {
                 "id": f.id,
                 "title": f.title,
-                "views": f.views_count,
+                "views": f.unique_views,
                 "release_date": f.created_at.date(),
             }
             for f in trending_films
@@ -280,7 +283,7 @@ class LatestFilmsView(APIView):
             {
                 "id": f.id,
                 "title": f.title,
-                "views": f.views_count,
+                "views": f.unique_views,
                 "release_date": f.created_at.date(),
             }
             for f in latest_films
@@ -310,7 +313,7 @@ class MyTitlesView(APIView):
                 "title": t.title,
                 "status": t.get_status_display(),      # human-readable label
                 "film_type": t.get_film_type_display(),# human-readable label
-                "views": t.views_count,
+                "views": t.unique_views,
                 "total_earning": t.total_earning
             }
             for t in my_titles
@@ -340,7 +343,7 @@ class MyTitlesView(APIView):
 #                 "title": t.title,
 #                 "status": t.get_status_display(),      # human-readable label
 #                 "film_type": t.get_film_type_display(),# human-readable label
-#                 "views": t.views_count,
+#                 "views": t.unique_views,
 #                 "total_earning": t.total_earning
 #             })
 
