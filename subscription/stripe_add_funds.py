@@ -58,13 +58,13 @@ class CreateAddFundsCheckoutSessionView(APIView):
 def stripe_add_funds_checkout_success_view(request):
     return JsonResponse({
         "status": "success",
-        "message": "Subscription successful! You can now access premium features."
+        "message": "add_funds successfully."
     })
 
 def stripe_add_funds_checkout_cancel_view(request):
     return JsonResponse({
         "status": "cancelled",
-        "message": "Subscription process was cancelled. You can try again anytime."
+        "message": "add_funds process was cancelled. You can try again anytime."
     })
 
 
