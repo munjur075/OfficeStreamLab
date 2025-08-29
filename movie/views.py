@@ -316,6 +316,7 @@ class MyTitlesView(APIView):
                 "views": t.unique_views,
                 "total_earning": t.total_earning
             }
+
             for t in my_titles
         ]
 
@@ -366,3 +367,45 @@ class GenreListView(APIView):
             "message": "Genres fetched successfully",
             "data": serializer.data
         })
+    
+
+
+
+
+from .utils import get_daily_views, get_weekly_earnings
+class FilmDailyViewsView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request, film_id):
+        data = get_daily_views(film_id)
+        if not data:
+            return Response(
+                {"success": False, "message": "Film not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        response_data = {
+            "success": True,
+            "daily_stats": data,
+            "note": "Last 7 days film view stats"
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+
+class FilmWeeklyEarningsView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request, film_id):
+        data = get_weekly_earnings(film_id)
+        if not data:
+            return Response(
+                {"success": False, "message": "Film not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        response_data = {
+            "success": True,
+            "weekly_stats": data,
+            "note": "Last 7 weeks film earning stats"
+        }
+        return Response(response_data, status=status.HTTP_200_OK)

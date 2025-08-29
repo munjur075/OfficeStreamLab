@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from accounts.models import User
+from movie.models import Film
 
 
 # -------------------- WALLET --------------------
@@ -58,6 +59,7 @@ class Transaction(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="transactions")
+    film = models.ForeignKey(Film, on_delete=models.CASCADE, null=True, blank=True)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
     tx_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -76,6 +78,7 @@ class Transaction(models.Model):
             models.Index(fields=["user", "created_at"]),
             models.Index(fields=["tx_type"]),
             models.Index(fields=["balance_type"]),
+            models.Index(fields=["film"]),  # optional, for faster film queries
         ]
 
     def __str__(self):
