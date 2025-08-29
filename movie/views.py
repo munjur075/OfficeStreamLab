@@ -373,19 +373,60 @@ class GenreListView(APIView):
 
 
 from .utils import get_daily_views, get_weekly_earnings
-class FilmDailyViewsView(APIView):
+class FilmAnalyticsView(APIView):
     # permission_classes = [IsAuthenticated]
 
     def get(self, request, film_id):
-        data = get_daily_views(film_id)
-        if not data:
+        try:
+            film = Film.objects.get(id=film_id)
+        except Film.DoesNotExist:
             return Response(
-                {"success": False, "message": "Film not found"},
+                {"status": "faild", "message": "Film not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        daily_views_data = get_daily_views(film_id)
+        if not daily_views_data:
+            return Response(
+                {"status": "faild", "message": "Film not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        weekly_earnings_data = get_weekly_earnings(film_id)
+        if not weekly_earnings_data:
+            return Response(
+                {"status": "faild", "message": "Film not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
         response_data = {
-            "success": True,
+            "status": "success",
+            "film_title": film.title,
+            "film_id": film.id,
+            "total_views": film.total_views,
+            "total_earning": film.total_earning,
+            "unique_views": film.unique_views,
+            "daily_views_data": daily_views_data,
+            "weekly_earnings_data": weekly_earnings_data,
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+    
+# test start--------------
+from .utils import get_last_7_days_analytics
+class FilmDailyViewsView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request, film_id):
+        data = get_last_7_days_analytics(film_id)
+        if not data:
+            return Response(
+                {"status": "faild", "message": "Film not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        response_data = {
+            "status": "success",
             "daily_stats": data,
             "note": "Last 7 days film view stats"
         }
@@ -399,13 +440,14 @@ class FilmWeeklyEarningsView(APIView):
         data = get_weekly_earnings(film_id)
         if not data:
             return Response(
-                {"success": False, "message": "Film not found"},
+                {"status": "faild", "message": "Film not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
         response_data = {
-            "success": True,
+            "status": "success",
             "weekly_stats": data,
             "note": "Last 7 weeks film earning stats"
         }
         return Response(response_data, status=status.HTTP_200_OK)
+# test end-------------

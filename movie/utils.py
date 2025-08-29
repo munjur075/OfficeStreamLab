@@ -8,40 +8,38 @@ from subscription.models import Transaction
 def get_daily_views(film_id):
     """
     Return daily view counts for the last 7 days (including today)
-    for the given film_id.
+    for the given film_id, with progress proportional to views.
     """
-    try:
-        film = Film.objects.get(id=film_id)
-    except Film.DoesNotExist:
-        return None  # Film not found
 
     today = date.today()
-    last_7_days = today - timedelta(days=6)
+    last_7_days = [today - timedelta(days=i) for i in reversed(range(7))]  # oldest → newest
 
-    views = (
-        FilmView.objects.filter(film=film, viewed_at__date__gte=last_7_days)
+    # Get views in last 7 days
+    views_qs = (
+        FilmView.objects.filter(film=film_id, viewed_at__date__gte=last_7_days[0])
         .annotate(day=TruncDate("viewed_at"))
         .values("day")
         .annotate(total_views=Count("id"))
-        .order_by("day")
     )
 
+    # Make dict for easy lookup
+    views_dict = {v["day"]: v["total_views"] for v in views_qs}
+
+    # Total views over 7 days
+    total_views = sum(views_dict.get(day, 0) for day in last_7_days) or 1  # avoid div by zero
+
     result = []
-    for i in range(7):
-        day = last_7_days + timedelta(days=i)
-        day_views = next((v["total_views"] for v in views if v["day"] == day), 0)
+    for day in last_7_days:
+        day_views = views_dict.get(day, 0)
+        progress = (day_views / total_views) * 100 if total_views else 0
         result.append({
             "day": str(day),
-            "total_views": day_views
+            "total_views": day_views,
+            "progress_value": round(progress, 2)  # round to 2 decimal places
         })
 
-    # keep it in variable for flexibility
-    data = {
-        "film": film.title,
-        "film_id": film.id,
-        "daily_views": result
-    }
-    return data
+
+    return result
 
 
 
@@ -49,12 +47,13 @@ def get_daily_views(film_id):
 def get_weekly_earnings(film_id):
     """
     Return total earnings per week for the last 7 weeks for a given film_id.
+    Includes progress proportional to earnings.
     Only considers successful 'purchase' and 'rent' transactions.
     """
     today = date.today()
     last_7_weeks_start = today - timedelta(weeks=6)  # last 7 weeks including this week
 
-    # Filter only film purchase/rent and successful transactions
+    # Query earnings
     earnings_qs = (
         Transaction.objects.filter(
             film_id=film_id,
@@ -68,20 +67,77 @@ def get_weekly_earnings(film_id):
         .order_by("week")
     )
 
-    # Convert to dict for faster lookup
+    # Dict for easy lookup
     earnings_dict = {e["week"].date(): float(e["total_earning"] or 0) for e in earnings_qs}
 
+    # Total earnings across 7 weeks
+    week_starts = [last_7_weeks_start + timedelta(weeks=i) for i in range(7)]
+    total_earnings = sum(earnings_dict.get(week, 0) for week in week_starts) or 1  # avoid div by zero
+
+    # Build result with progress
     result = []
-    for i in range(7):
-        week_start = last_7_weeks_start + timedelta(weeks=i)
+    for week_start in week_starts:
+        earning = earnings_dict.get(week_start, 0)
+        progress = (earning / total_earnings) * 100 if total_earnings else 0
         result.append({
             "week_start": str(week_start),
-            "total_earning": earnings_dict.get(week_start, 0.0)
+            "total_earning": earning,
+            "progress_value": round(progress, 2)
         })
-    
-    # keep it in variable for flexibility
+
+    return result
+
+# Daily Views (Last 7 Days) Average watch time
+def get_last_7_days_analytics(film_id):
+    """
+    Returns last 7 days daily views with progress and average watch time.
+    Progress is based on Film.total_views (every play).
+    Average watch time uses watched_seconds from FilmView.
+    """
+
+    try:
+        film = Film.objects.get(id=film_id)
+    except Film.DoesNotExist:
+        return None
+
+    today = date.today()
+    last_7_days = [today - timedelta(days=i) for i in reversed(range(7))]  # oldest → newest
+
+    # Aggregate daily watched seconds
+    views_qs = FilmView.objects.filter(
+        film=film, viewed_at__date__gte=last_7_days[0]
+    ).annotate(day=TruncDate('viewed_at')).values('day').annotate(
+        daily_watched_seconds=Sum('watched_seconds'),
+        daily_unique_views=Count('id')
+    )
+
+    # Dict for easy lookup
+    watched_dict = {v['day']: v['daily_watched_seconds'] for v in views_qs}
+    unique_views_dict = {v['day']: v['daily_unique_views'] for v in views_qs}
+
+    # Build daily result with progress based on Film.total_views
+    result = []
+    total_views_last7days = sum(unique_views_dict.values()) or 1  # unique views for last 7 days
+
+    for day in last_7_days:
+        watched_sec = watched_dict.get(day, 0)
+        day_unique_views = unique_views_dict.get(day, 0)
+        progress = (day_unique_views / total_views_last7days) * 100 if total_views_last7days else 0
+        result.append({
+            "day": str(day),
+            "unique_views": day_unique_views,
+            "watched_seconds": watched_sec,
+            "progress_value": round(progress, 2)
+        })
+
+    # Average watch time (per play)
+    total_watched_seconds = sum(watched_dict.values())
+    average_watch_time_seconds = total_watched_seconds / (film.total_views or 1)
+
     data = {
-        "film_id": film_id,
-        "weekly_earnings": result
+        "daily_views": result,
+        "average_watch": round(average_watch_time_seconds, 2)
     }
+
     return data
+

@@ -96,6 +96,8 @@ class FilmView(models.Model):
     film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name='views')
     viewer = models.ForeignKey(User, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
+    watched_seconds = models.PositiveIntegerField(default=0)  # new field to track watch time
+
     #
 
     class Meta:

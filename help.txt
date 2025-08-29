@@ -71,3 +71,44 @@ class FilmSerializer(serializers.ModelSerializer):
     class Meta:
         model = Film
         fields = ["id", "title", "status", "film_type", "created_at"]
+
+
+
+----------------
+from django.db import transaction, IntegrityError
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Film, FilmView
+
+class FilmPlayView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, film_id):
+        viewer = request.user
+        try:
+            film = Film.objects.get(id=film_id)
+        except Film.DoesNotExist:
+            return Response({"message": "Film not found"}, status=404)
+
+        # Use atomic transaction to avoid race conditions
+        with transaction.atomic():
+            # Always increment total views safely
+            Film.objects.filter(id=film.id).update(total_views=models.F('total_views') + 1)
+
+            # Try to create a unique view
+            try:
+                FilmView.objects.create(film=film, viewer=viewer)
+                Film.objects.filter(id=film.id).update(unique_views=models.F('unique_views') + 1)
+            except IntegrityError:
+                # Viewer already counted in unique views
+                pass
+
+        # Refresh from DB to get updated values
+        film.refresh_from_db()
+
+        return Response({
+            "message": "View recorded",
+            "unique_views": film.unique_views,
+            "total_views": film.total_views
+        })
