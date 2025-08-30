@@ -1,15 +1,18 @@
+from rest_framework.views import APIView
 import cloudinary
 import cloudinary.uploader
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from rest_framework.permissions import IsAuthenticated
-from .models import Film, Genre, FilmView
+from .models import Film, Genre, FilmView, FilmPlayView
 from .serializers import FilmSerializer, FilmListSerializer, GenreSerializer
+from datetime import date, timedelta
+from django.db.models import Sum
+from subscription.models import Transaction
 
 
 class FilmUploadView(APIView):
@@ -218,50 +221,94 @@ class FilmDetailsView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-
-from django.db import IntegrityError
-class FilmPlayView(APIView):
+#
+from django.db.models import F
+class RecordFilmViewAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         viewer = request.user
         film_id = request.data.get("film_id")
-        watch_time = request.data.get("watch_time")
-        # print(viewer)
-        # print(film_id)
+
         try:
             film = Film.objects.get(id=film_id)
-            film_maker = film.filmmaker
-            # print(film_maker)
         except Film.DoesNotExist:
             return Response({"message": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
-            
-        if not film_maker == viewer:
-            # Increment total views
-            film.total_views += 1
-            film.watch_time += watch_time
-            try:
-                # Try to add a unique view
-                FilmView.objects.create(film=film, viewer=viewer)
-                film.unique_views += 1
-            except IntegrityError:
-                # viewer already counted in unique views
-                pass
-            film.save()
 
-            return Response({
-                "message": "View recorded",
-                "unique_views": film.unique_views,
-                "total_views": film.total_views
-            })
-        
+        if film.filmmaker == viewer:
+            return Response({"message": "Filmmakers cannot view their own films"})
+
+        # increment total views
+        film.total_views = F("total_views") + 1
+        film.save(update_fields=["total_views"])
+        film.refresh_from_db(fields=["total_views"])
+
+        # record every play
+        FilmPlayView.objects.create(film=film, viewer=viewer)
+
+        # handle unique view
+        obj, created = FilmView.objects.get_or_create(
+            film=film,
+            viewer=viewer,
+            defaults={"watch_time": 0}
+        )
+        if created:
+            film.unique_views = F("unique_views") + 1
+            film.save(update_fields=["unique_views"])
+            film.refresh_from_db(fields=["unique_views"])
+
+        return Response({
+            "message": "View recorded",
+            "unique_views": film.unique_views,
+            "total_views": film.total_views
+        }, status=status.HTTP_201_CREATED)
+
+
+    
+#
+class RecordWatchTimeAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        viewer = request.user
+        film_id = request.data.get("film_id")
+        watch_time = int(request.data.get("watch_time", 0))
+
+        try:
+            film = Film.objects.get(id=film_id)
+        except Film.DoesNotExist:
+            return Response({"message": "Film not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if film.filmmaker == viewer:
+            return Response({"message": "Filmmakers cannot watch their own films"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Increment total watch time on Film
+        film.total_watch_time = F("total_watch_time") + watch_time
+        film.save(update_fields=["total_watch_time"])
+        film.refresh_from_db(fields=["total_watch_time"])
+
+        # Update FilmView for this viewer and film (latest entry)
+        last_film_view = FilmView.objects.filter(film=film, viewer=viewer).order_by('-viewed_at').first()
+        if last_film_view:
+            last_film_view.watch_time = F("watch_time") + watch_time
+            last_film_view.save(update_fields=["watch_time"])
         else:
-            return Response({
-                "message": "Already View recorded",
-                "unique_views": film.unique_views,
-                "total_views": film.total_views
-            })
+            # If no FilmView exists, create one
+            FilmView.objects.create(film=film, viewer=viewer, watch_time=watch_time)
 
+        # Update FilmPlayView for this viewer and film (latest entry)
+        last_play_view = FilmPlayView.objects.filter(film=film, viewer=viewer).order_by('-viewed_at').first()
+        if last_play_view:
+            last_play_view.watch_time = F("watch_time") + watch_time
+            last_play_view.save(update_fields=["watch_time"])
+        else:
+            # If no FilmPlayView exists, create one
+            FilmPlayView.objects.create(film=film, viewer=viewer, watch_time=watch_time)
+
+        return Response({
+            "message": "Watch time recorded",
+            "total_watch_time": film.total_watch_time
+        }, status=status.HTTP_200_OK)
 
 
 #
@@ -382,157 +429,64 @@ class GenreListView(APIView):
         })
     
 
-
-
-
-from .utils import get_daily_views, get_weekly_earnings
-class FilmAnalyticsView3(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    def get(self, request, film_id):
-        try:
-            film = Film.objects.get(id=film_id)
-        except Film.DoesNotExist:
-            return Response(
-                {"status": "faild", "message": "Film not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        daily_views_data = get_daily_views(film_id)
-        if not daily_views_data:
-            return Response(
-                {"status": "faild", "message": "Film not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        weekly_earnings_data = get_weekly_earnings(film_id)
-        if not weekly_earnings_data:
-            return Response(
-                {"status": "faild", "message": "Film not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        response_data = {
-            "status": "success",
-            "film_title": film.title,
-            "film_id": film.id,
-            "total_views": film.total_views,
-            "total_earning": film.total_earning,
-            "unique_views": film.unique_views,
-            "daily_views_data": daily_views_data,
-            "weekly_earnings_data": weekly_earnings_data,
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-    
-# test start--------------
-from .utils import get_last_7_days_analytics
-class FilmDailyViewsView(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    def get(self, request, film_id):
-        data = get_last_7_days_analytics(film_id)
-        if not data:
-            return Response(
-                {"status": "faild", "message": "Film not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        response_data = {
-            "status": "success",
-            "daily_stats": data,
-            "note": "Last 7 days film view stats"
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-    
-
-class FilmWeeklyEarningsView(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    def get(self, request, film_id):
-        data = get_weekly_earnings(film_id)
-        if not data:
-            return Response(
-                {"status": "faild", "message": "Film not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        response_data = {
-            "status": "success",
-            "weekly_stats": data,
-            "note": "Last 7 weeks film earning stats"
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
-# test end-------------
-
-from datetime import date, timedelta
-from django.db.models import Sum, Avg
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-
-from .models import Film, FilmView
-from subscription.models import Transaction
-
-
+#
 class FilmAnalyticsView(APIView):
     # permission_classes = [IsAuthenticated]
 
-    def get(self, request, film_id):
-        today = date.today()
+    def get(self, request):
+        
+        film_id = request.data.get("film_id")
+        
         film = Film.objects.filter(id=film_id).first()
         if not film:
             return Response({"message": "Film not found"}, status=404)
+        
+        today = date.today()
 
-        # ---- 1. Totals ----
-        total_views = FilmView.objects.filter(film=film).count()
-        unique_viewers = FilmView.objects.filter(film=film).values("viewer").distinct().count()
-        total_earning = Transaction.objects.filter(
-            film=film, tx_type__in=["purchase", "rent"], status="success"
-        ).aggregate(total=Sum("amount"))["total"] or 0
+        # ---- 1. Totals from Film table ----
+        total_views = film.total_views
+        unique_viewers = film.unique_views
+        total_earning = film.total_earning
+        total_watch_time = film.total_watch_time
 
         # ---- 2. Daily Views (last 7 days) ----
         daily_views = []
-        for i in range(6, -1, -1):
+        for i in range(7):
             day = today - timedelta(days=i)
-            views = FilmView.objects.filter(film=film, viewed_at__date=day).count()
+            day_views = FilmPlayView.objects.filter(
+                film=film,
+                viewed_at__date=day
+            ).count()
             daily_views.append({
                 "date": day.strftime("%Y-%m-%d"),
-                "views": views
+                "views": day_views
             })
+        daily_views.reverse()  # so oldest day is first
 
         # ---- 3. Weekly Earnings (last 7 weeks) ----
         weekly_earnings = []
-        for i in range(6, -1, -1):
-            start_week = today - timedelta(weeks=i, days=today.weekday())
-            end_week = start_week + timedelta(days=6)
-            week_total = Transaction.objects.filter(
+        for i in range(7):
+            week_start = today - timedelta(days=today.weekday() + i * 7)
+            week_end = week_start + timedelta(days=6)
+            week_earning = Transaction.objects.filter(
                 film=film,
                 tx_type__in=["purchase", "rent"],
-                status="success",
-                created_at__date__range=[start_week, end_week]
+                created_at__date__gte=week_start,
+                created_at__date__lte=week_end
             ).aggregate(total=Sum("amount"))["total"] or 0
             weekly_earnings.append({
-                "week_start": start_week.strftime("%Y-%m-%d"),
-                "week_end": end_week.strftime("%Y-%m-%d"),
-                "earning": float(week_total)
+                "week_start": week_start.strftime("%Y-%m-%d"),
+                "week_end": week_end.strftime("%Y-%m-%d"),
+                "earning": float(week_earning)
             })
+        weekly_earnings.reverse()  # so oldest week is first
 
-        # ---- 4. Average Watch Time (last 7 days, per view) ----
-        avg_watch_time = FilmView.objects.filter(
-            film=film,
-            viewed_at__date__gte=today - timedelta(days=6)
-        ).aggregate(avg=Avg("watched_seconds"))["avg"] or 0
+        # ---- 4. Average Watch Time per view ----
+        average_watch_time = total_watch_time / total_views if total_views else 0
 
         # ---- 5. Revenue Breakdown ----
-        breakdown_qs = Transaction.objects.filter(
-            film=film,
-            tx_type__in=["purchase", "rent"],
-            status="success"
-        ).values("tx_type").annotate(total=Sum("amount"))
-
-        revenue_breakdown = {item["tx_type"]: float(item["total"]) for item in breakdown_qs}
-        revenue_breakdown["total"] = float(total_earning)
+        total_buy_earning = film.total_buy_earning
+        total_rent_earning = film.total_rent_earning
 
         return Response({
             "film": film.title,
@@ -541,6 +495,7 @@ class FilmAnalyticsView(APIView):
             "total_earning": float(total_earning),
             "daily_views": daily_views,
             "weekly_earnings": weekly_earnings,
-            "average_watch_time_seconds": round(avg_watch_time, 2),
-            "revenue_breakdown": revenue_breakdown
+            "average_watch_time_seconds": round(average_watch_time, 2),
+            "total_buy_earning": float(total_buy_earning),
+            "total_rent_earning": float(total_rent_earning)
         })
