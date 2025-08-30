@@ -112,3 +112,6 @@ class FilmPlayView(APIView):
             "unique_views": film.unique_views,
             "total_views": film.total_views
         })
+
+
+a flim last 7 days e koto kore per day te view hoiche and eai 7days e average witch time koto 

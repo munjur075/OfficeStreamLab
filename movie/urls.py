@@ -10,7 +10,7 @@ urlpatterns = [
 
     # ----------- Extra ------------#
     path("film-detail/<str:film_id>/", film_detail, name="film_detail"),
-    path("views-count/<str:film_id>/", FilmPlayView.as_view(), name="views-count"),
+    path("views-count/", FilmPlayView.as_view(), name="views-count"),
     # ----------- End -------------#
 
     # films details & related films

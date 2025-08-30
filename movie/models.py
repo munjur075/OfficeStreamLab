@@ -66,6 +66,9 @@ class Film(models.Model):
     unique_views = models.PositiveIntegerField(default=0)   # distinct viewers
     total_views = models.PositiveIntegerField(default=0)    # every play
     total_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_watch_time = models.PositiveIntegerField(default=0) # total watch time in seconds
+    total_buy_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_rent_earning = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     # Fields for multi-resolution HLS URLs
     trailer_hls_url = models.URLField(blank=True, null=True)
@@ -91,15 +94,15 @@ class Film(models.Model):
     
 
 
-# Track unique views per Flims
+# Track unique views & watch time per Flims
 class FilmView(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name='views')
+    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name='unique_view_records')
     viewer = models.ForeignKey(User, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
-    watched_seconds = models.PositiveIntegerField(default=0)  # new field to track watch time
+    watch_time = models.PositiveIntegerField(default=0)  # new field to track watch time
 
     #
-
+    
     class Meta:
         unique_together = ('film', 'viewer')  # ensures one record per user per film
         ordering = ['-viewed_at']
@@ -107,11 +110,25 @@ class FilmView(models.Model):
     def __str__(self):
         return f"{self.viewer.email} viewed {self.film.title}"
 
+# Track all views and watch time per Flims
+class FilmPlayView(models.Model):
+    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name='unique_play_records')
+    viewer = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    watch_time = models.PositiveIntegerField(default=0)  # track watch time
+
+    class Meta:
+        ordering = ['-viewed_at']
+
+    def __str__(self):
+        return f"{self.viewer} viewed {self.film.title} at {self.viewed_at}"
+
+
 
 
 #
-# -------------------- FILMS (BUY / RENT) --------------------
-class FilmAccess(models.Model):
+# -------------------- MY FILMS (BUY / RENT) --------------------
+class MyFilms(models.Model):
     """Tracks user access to films (buy = lifetime, rent = temporary)!"""
 
     ACCESS_TYPE = [
@@ -119,20 +136,21 @@ class FilmAccess(models.Model):
         ("Rent", "Temporary"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="film_access")
-    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name="access")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="my_films")
+    film = models.ForeignKey(Film, on_delete=models.CASCADE, related_name="my_film_access")
     access_type = models.CharField(max_length=10, choices=ACCESS_TYPE)
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Film Access"
-        verbose_name_plural = "Film Accesses"
+        verbose_name = "My Film"
+        verbose_name_plural = "My Films"
         unique_together = ("user", "film", "access_type")
 
     def save(self, *args, **kwargs):
+        # Fix: rental_hours is in hours, use timedelta(hours=...)
         if self.access_type == "Rent" and not self.end_date:
-            self.end_date = self.start_date + timedelta(days=self.film.rental_hours)
+            self.end_date = self.start_date + timedelta(hours=self.film.rental_hours)
         super().save(*args, **kwargs)
 
     @property
@@ -143,4 +161,3 @@ class FilmAccess(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.film.title} ({self.access_type})"
-

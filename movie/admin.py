@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Film, Genre, FilmView, FilmAccess
+from .models import Film, Genre, FilmView, MyFilms
 
 class FilmAdmin(admin.ModelAdmin):
     list_display = ('id','title', 'year', 'status', 'created_at', 'updated_at', 'filmmaker')
@@ -13,11 +13,11 @@ class GenreAdmin(admin.ModelAdmin):
 class FilmViewAdmin(admin.ModelAdmin):
     list_display =('film', 'viewer')
 
-class FilmAccessAdmin(admin.ModelAdmin):
+class MyFilmsAdmin(admin.ModelAdmin):
     list_display =('user', 'film', 'access_type', 'start_date', 'end_date')
 
 # Register models in the admin interface
 admin.site.register(Film, FilmAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(FilmView, FilmViewAdmin)
-admin.site.register(FilmAccess, FilmAccessAdmin)
+admin.site.register(MyFilms, MyFilmsAdmin)
