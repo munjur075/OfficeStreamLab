@@ -24,7 +24,7 @@ class MyReelBuxView(APIView):
                 "source": t.get_source_display(),
                 "tx_type": t.get_tx_type_display(),
                 "amount": t.amount,
-                "date": t.created_at.date(),
+                "date": t.created_at.strftime("%d %B %Y"),
                 "status": t.get_status_display(),
             }
             for t in txn_history
