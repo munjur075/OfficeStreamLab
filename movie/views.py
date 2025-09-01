@@ -509,7 +509,7 @@ class GenreListView(APIView):
 
 #
 class MyTitlesAnalyticsView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         
