@@ -361,28 +361,106 @@ class LatestFilmsView(APIView):
 # ---------------------------
 # option A
 # ---------------------------
+
+# from django.db.models import Q
+# class MyTitlesView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         user = request.user
+#         my_titles = Film.objects.filter(filmmaker=user)
+
+#         # ---- Stats ----
+#         stats = {
+#             "total_films": my_titles.count(),
+#             "published_films": my_titles.filter(status__iexact="published").count(),
+#             "total_views": my_titles.aggregate(Sum("total_views"))["total_views__sum"] or 0,
+#             "total_earning": my_titles.aggregate(Sum("total_earning"))["total_earning__sum"] or 0,
+#         }
+
+#         # ---- Filters ----
+#         status_param = request.GET.get("status")
+#         if status_param:
+#             my_titles = my_titles.filter(status__iexact=status_param)
+
+#         # ---- Search ----
+#         search_param = request.GET.get("search")
+#         if search_param:
+#             my_titles = my_titles.filter(Q(title__icontains=search_param))
+
+
+#         data = [
+#             {
+#                 "title": t.title,
+#                 "status": t.get_status_display(),
+#                 "film_type": t.get_film_type_display(),
+#                 "views": t.total_views,
+#                 "total_earning": t.total_earning
+#             }
+#             for t in my_titles
+#         ]
+        
+#         return Response({
+#             "status": "success",
+#             "message": "My titles fetched successfully",
+#             "stats": stats,
+#             "data": data
+#         })
+
+
+# Pagination
+from rest_framework.pagination import PageNumberPagination
+class MyTitlesPagination(PageNumberPagination):
+    page_size = 10                   # default items per page
+    page_size_query_param = "page_size"  # frontend can set ?page_size=20
+    max_page_size = 100
+
+from django.db.models import Q
 class MyTitlesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        filmmaker = request.user
-        my_titles = Film.objects.filter(filmmaker=filmmaker)
+        user = request.user
+        my_titles = Film.objects.filter(filmmaker=user)
+
+        # ---- Stats ----
+        stats = {
+            "total_films": my_titles.count(),
+            "published_films": my_titles.filter(status__iexact="published").count(),
+            "total_views": my_titles.aggregate(Sum("total_views"))["total_views__sum"] or 0,
+            "total_earning": my_titles.aggregate(Sum("total_earning"))["total_earning__sum"] or 0,
+        }
+
+        # ---- Filters ----
+        status_param = request.GET.get("status")
+
+        if status_param:
+            my_titles = my_titles.filter(status__iexact=status_param)
+
+        # ---- Search ----
+        search_param = request.GET.get("search")
+        if search_param:
+            my_titles = my_titles.filter(Q(title__icontains=search_param))
+
+        # ---- Pagination ----
+        paginator = MyTitlesPagination()
+        result_page = paginator.paginate_queryset(my_titles, request)
 
         data = [
             {
                 "title": t.title,
-                "status": t.get_status_display(),      # human-readable label
-                "film_type": t.get_film_type_display(),# human-readable label
-                "views": t.unique_views,
+                "status": t.get_status_display(),
+                "film_type": t.get_film_type_display(),
+                "views": t.total_views,
                 "total_earning": t.total_earning
             }
-
-            for t in my_titles
+            for t in result_page
         ]
-
-        return Response({
+        
+        return paginator.get_paginated_response({
             "status": "success",
             "message": "My titles fetched successfully",
+            "stats": stats,
             "data": data
         })
     
@@ -430,7 +508,7 @@ class GenreListView(APIView):
     
 
 #
-class FilmAnalyticsView(APIView):
+class MyTitlesAnalyticsView(APIView):
     # permission_classes = [IsAuthenticated]
 
     def get(self, request):
