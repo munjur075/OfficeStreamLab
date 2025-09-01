@@ -16,7 +16,8 @@ class MyReelBuxView(APIView):
         allowed_tx_types = ['fund', 'purchase', 'rent', 'subscription']
         txn_history = Transaction.objects.filter(
             user=user,
-            tx_type__in=allowed_tx_types
+            tx_type__in=allowed_tx_types,
+            balance_type='reelbux'
         ).order_by('-created_at')[:10]
 
         txn_data = [
