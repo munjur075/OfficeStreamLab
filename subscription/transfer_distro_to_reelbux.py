@@ -54,7 +54,7 @@ class TransferDistroToReelBuxAPIView(APIView):
                 amount=amount,
                 txn_id=transfer_id,   # <-- same ID for both
                 balance_type="distro",
-                status="success",
+                status="completed",
                 description=f"Transferred {amount} from Distro to ReelBux",
             )
 
@@ -66,7 +66,7 @@ class TransferDistroToReelBuxAPIView(APIView):
                 amount=amount,
                 txn_id=transfer_id,   # <-- same ID for both
                 balance_type="reelbux",
-                status="success",
+                status="completed",
                 description=f"Received {amount} from Distro",
             )
 

@@ -54,7 +54,7 @@ class Transaction(models.Model):
 
     STATUS_CHOICES = [
         ("pending", "Pending"),
-        ("success", "Success"),
+        ("completed", "Completed"),
         ("failed", "Failed"),
     ]
 

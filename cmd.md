@@ -12,3 +12,29 @@ ngrok http --url=equal-evidently-terrier.ngrok-free.app 8000
 
 # Changeable
 ngrok http http://localhost:8080
+
+# How to do AND / OR logic in Django ORM queries.
+🔹AND Logic
+    from myapp.models import Transaction
+    # Example: user=1 AND tx_type='fund'
+    Transaction.objects.filter(user=1, tx_type='fund')
+
+🔹OR Logic
+    from django.db.models import Q
+    # Example: tx_type='fund' OR tx_type='rent'
+    Transaction.objects.filter(Q(tx_type='fund') | Q(tx_type='rent'))
+
+🔹Combining AND + OR
+    # Example: user=1 AND (tx_type='fund' OR tx_type='rent')
+    Transaction.objects.filter(
+        user=1
+    ).filter(
+        Q(tx_type='fund') | Q(tx_type='rent')
+    )
+
+    Or equivalently:
+        Transaction.objects.filter(
+            Q(user=1) & (Q(tx_type='fund') | Q(tx_type='rent'))
+        )
+
+    

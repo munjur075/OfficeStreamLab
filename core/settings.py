@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'accounts',
     'movie',
     'subscription',
+    'reelbux',
 ]
 
 # CustomUser Model

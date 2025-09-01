@@ -46,7 +46,7 @@ class StripeWebhookAddFundsView(APIView):
                     tx_type="fund",
                     amount=Decimal(amount),
                     balance_type="reelbux",
-                    status="success",
+                    status="completed",
                     txn_id=payment_id,
                     description=f"Wallet top-up via {payment_method}"
                 )
