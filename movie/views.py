@@ -425,7 +425,7 @@ class LatestFilmsView(APIView):
 
 # Pagination
 from rest_framework.pagination import PageNumberPagination
-class MyTitlesPagination(PageNumberPagination):
+class MyPagination(PageNumberPagination):
     page_size = 10                   # default items per page
     page_size_query_param = "page_size"  # frontend can set ?page_size=20
     max_page_size = 100
@@ -458,7 +458,7 @@ class MyTitlesView(APIView):
             my_titles = my_titles.filter(Q(title__icontains=search_param))
 
         # ---- Pagination ----
-        paginator = MyTitlesPagination()
+        paginator = MyPagination()
         result_page = paginator.paginate_queryset(my_titles, request)
 
         data = [
@@ -594,7 +594,8 @@ class MyTitlesAnalyticsView(APIView):
         })
 
 
-# Global Search Api
+# -------------------------------------M.Alom----------------------------------
+# Search Api
 class GlobalSearchListView(APIView):
     def get(self, request):
         search_param = request.GET.get("search", "").strip()
@@ -625,3 +626,53 @@ class GlobalSearchListView(APIView):
                 "message": "No films found matching your search",
                 "data": [],
             })
+
+
+# -------------------------------------M.Alom----------------------------------
+# My Library
+from .models import MyFilms
+class MyLibraryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        my_library = MyFilms.objects.filter(user=user)
+
+        # ---- Stats ----
+        stats = {
+            "total_buy": my_library.filter(access_type__iexact="Buy").count(),
+            "total_rent": my_library.filter(access_type__iexact="Rent").count(),
+        }
+
+        # ---- Filters ----
+        access_type_param = request.GET.get("access_type")
+
+        if access_type_param:
+            my_library = my_library.filter(access_type__iexact=access_type_param)
+
+        # ---- Search ----
+        search_param = request.GET.get("search")
+        if search_param:
+            my_library = my_library.filter(Q(title__icontains=search_param))
+
+        # ---- Pagination ----
+        paginator = MyPagination()
+        result_page = paginator.paginate_queryset(my_library, request)
+
+        data = [
+            {
+                "title": t.title,
+                "status": t.get_status_display(),
+                "film_type": t.get_film_type_display(),
+                "views": t.total_views,
+                "total_earning": t.total_earning
+            }
+            for t in result_page
+        ]
+        
+        return paginator.get_paginated_response({
+            "status": "success",
+            "message": "My titles fetched successfully",
+            "stats": stats,
+            "data": data
+        })
