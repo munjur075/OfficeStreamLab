@@ -9,8 +9,8 @@ urlpatterns = [
     path('webhook/cloudinary/', cloudinary_webhook, name='cloudinary-webhook'),
 
     # ----------- Extra ------------#
-    path("views-count/", RecordFilmViewAPIView.as_view(), name="views_count"),
-    path("watch-time-count/", RecordWatchTimeAPIView.as_view(), name="watch_time_count"),
+    path("views-count", RecordFilmViewAPIView.as_view(), name="views_count"),
+    path("watch-time-count", RecordWatchTimeAPIView.as_view(), name="watch_time_count"),
     # ----------- End -------------#
 
     # trending, latest & film details
