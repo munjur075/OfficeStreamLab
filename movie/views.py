@@ -577,3 +577,36 @@ class MyTitlesAnalyticsView(APIView):
             "total_buy_earning": float(total_buy_earning),
             "total_rent_earning": float(total_rent_earning)
         })
+
+
+# Global Search Api
+class GlobalSearchListView(APIView):
+    def get(self, request):
+        search_param = request.GET.get("search", "").strip()
+
+        # Only search published films
+        films_qs = Film.objects.filter(
+            Q(title__icontains=search_param),
+            status__iexact="published"
+        )[:10]
+
+
+        if films_qs.exists():
+            data = [
+                {
+                    "id": film.id,
+                    "title": film.title,
+                }
+                for film in films_qs
+            ]
+            return Response({
+                "status": "success",
+                "message": "Search films fetched successfully",
+                "data": data,
+            })
+        else:
+            return Response({
+                "status": "success",
+                "message": "No films found matching your search",
+                "data": [],
+            })
