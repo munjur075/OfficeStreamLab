@@ -15,22 +15,22 @@ urlpatterns = [
     # ----------- End -------------#
 
     # films details & related films
-    path("details/<str:film_id>/", FilmDetailsView.as_view(), name="details"),
+    path("details", FilmDetailsView.as_view(), name="details"),
 
     # trending-films
-    path("trending/", TrendingFilmsView.as_view(), name="trending"),
+    path("trending", TrendingFilmsView.as_view(), name="trending"),
 
     # latest-films
-    path("latest/", LatestFilmsView.as_view(), name="latest"),
+    path("latest", LatestFilmsView.as_view(), name="latest"),
 
     # Search Api
     path("search", GlobalSearchListView.as_view(), name="search"),
 
     # My Titles
-    path("my-titles/", MyTitlesView.as_view(), name="my-titles"),
-    path("my-titles/analytics/", MyTitlesAnalyticsView.as_view(), name="my_titles_analytics"),
+    path("my-titles", MyTitlesView.as_view(), name="my-titles"),
+    path("my-titles/analytics", MyTitlesAnalyticsView.as_view(), name="my_titles_analytics"),
 
     # genre list
-    path("genre/", GenreListView.as_view(), name="genre"),
+    path("genre", GenreListView.as_view(), name="genre"),
 
 ]

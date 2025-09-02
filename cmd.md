@@ -13,6 +13,11 @@ ngrok http --url=equal-evidently-terrier.ngrok-free.app 8000
 # Changeable
 ngrok http http://localhost:8080
 
+# request body
+    film_id = request.data.get("film_id")
+# request Params
+    search_param = request.GET.get("search", "").strip()
+
 # How to do AND / OR logic in Django ORM queries.
 🔹AND Logic
     from myapp.models import Transaction

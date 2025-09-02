@@ -150,29 +150,31 @@ class FilmDetailsView(APIView):
     Returns details of a specific published film by its ID, 
     including related movies.
     """
-    def get(self, request, film_id):
-        
+    def get(self, request):
+        film_id = request.data.get("film_id")
+        # film_id = request.GET.get("film_id", "").strip()
+
         # Fetch film with case-insensitive status check
         film = get_object_or_404(Film, id=film_id, status__iexact='published')
 
         # Build film details
         film_details = {
             "id": film.id,
-            "filmmaker": str(film.filmmaker),
+            # "filmmaker": str(film.filmmaker),
             "title": film.title,
             "slug":film.slug,
             "year": film.year,
             "logline": film.logline,
-            "film_type": film.film_type,
+            "film_type": film.get_film_type_display(),
             "genre": [g.name for g in film.genre.all()] if hasattr(film.genre, "all") else film.genre,
-            "thumbnail": film.thumbnail.url if film.thumbnail else None,
-            "status": film.status,
-            "rent_price": film.rent_price,
-            "rental_hours": film.rental_hours,
+            # "status": film.status,
             "buy_price": film.buy_price,
+            "rent_price": film.rent_price,
+            # "rental_hours": film.rental_hours,
             "full_film_duration": film.full_film_duration,
-            "unique_views": film.unique_views,
-            "total_earning": film.total_earning,
+            # "unique_views": film.unique_views,
+            # "total_earning": film.total_earning,
+            "thumbnail": film.thumbnail.url if film.thumbnail else None,
             "trailer_hls_url": film.trailer_hls_url,
         }
 
@@ -191,21 +193,21 @@ class FilmDetailsView(APIView):
         related_data = [
             {
                 "id": f.id,
-                "filmmaker": str(f.filmmaker),
+                # "filmmaker": str(f.filmmaker),
                 "title": f.title,
-                "slug":film.slug,
+                "slug":f.slug,
                 "year": f.year,
                 "logline": f.logline,
-                "film_type": f.film_type,
+                "film_type": f.get_film_type_display(),
                 "genre": [g.name for g in f.genre.all()] if hasattr(f.genre, "all") else f.genre,
-                "thumbnail": f.thumbnail.url if f.thumbnail else None,
-                "status": f.status,
-                "rent_price": f.rent_price,
-                "rental_hours": f.rental_hours,
+                # "status": f.status,
                 "buy_price": f.buy_price,
+                "rent_price": f.rent_price,
+                # "rental_hours": f.rental_hours,
                 "full_film_duration": f.full_film_duration,
-                "unique_views": f.unique_views,
-                "total_earning": f.total_earning,
+                # "unique_views": f.unique_views,
+                # "total_earning": f.total_earning,
+                "thumbnail": f.thumbnail.url if f.thumbnail else None,
                 "trailer_hls_url": f.trailer_hls_url,
             }
             for f in related_films
@@ -214,10 +216,8 @@ class FilmDetailsView(APIView):
         return Response({
             "status": "success",
             "message": "Film details fetched successfully",
-            "data": {
-                "film": film_details,
-                "related_movies": related_data
-            }
+            "film_details": film_details,
+            "related_movies": related_data
         }, status=status.HTTP_200_OK)
 
 
@@ -320,9 +320,21 @@ class TrendingFilmsView(APIView):
         trending_data = [
             {
                 "id": f.id,
+                # "filmmaker": str(f.filmmaker),
                 "title": f.title,
-                "views": f.unique_views,
-                "release_date": f.created_at.date(),
+                "slug":f.slug,
+                "year": f.year,
+                "logline": f.logline,
+                "film_type": f.get_film_type_display(),
+                "genre": [g.name for g in f.genre.all()] if hasattr(f.genre, "all") else f.genre,
+                # "status": f.status,
+                "buy_price": f.buy_price,
+                "rent_price": f.rent_price,
+                # "unique_views": f.unique_views,
+                # "total_earning": f.total_earning,
+                "thumbnail": f.thumbnail.url if f.thumbnail else None,
+                "trailer_hls_url": f.trailer_hls_url,
+                # "release_date": f.created_at.date(),
             }
             for f in trending_films
         ]
@@ -342,9 +354,21 @@ class LatestFilmsView(APIView):
         latest_data = [
             {
                 "id": f.id,
+                # "filmmaker": str(f.filmmaker),
                 "title": f.title,
-                "views": f.unique_views,
-                "release_date": f.created_at.date(),
+                "slug":f.slug,
+                "year": f.year,
+                "logline": f.logline,
+                "film_type": f.get_film_type_display(),
+                "genre": [g.name for g in f.genre.all()] if hasattr(f.genre, "all") else f.genre,
+                # "status": f.status,
+                "buy_price": f.buy_price,
+                "rent_price": f.rent_price,
+                # "unique_views": f.unique_views,
+                # "total_earning": f.total_earning,
+                "thumbnail": f.thumbnail.url if f.thumbnail else None,
+                "trailer_hls_url": f.trailer_hls_url,
+                # "release_date": f.created_at.date(),
             }
             for f in latest_films
         ]
