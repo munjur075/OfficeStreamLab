@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import FilmUploadView, cloudinary_webhook, film_detail, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView
+from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView
 
 urlpatterns = [
     # film upload
@@ -9,28 +9,23 @@ urlpatterns = [
     path('webhook/cloudinary/', cloudinary_webhook, name='cloudinary-webhook'),
 
     # ----------- Extra ------------#
-    path("film-detail/<str:film_id>/", film_detail, name="film_detail"),
     path("views-count/", RecordFilmViewAPIView.as_view(), name="views_count"),
     path("watch-time-count/", RecordWatchTimeAPIView.as_view(), name="watch_time_count"),
     # ----------- End -------------#
 
-    # films details & related films
+    # trending, latest & film details
+    path("trending", TrendingFilmsView.as_view(), name="trending"),
+    path("latest", LatestFilmsView.as_view(), name="latest"),
     path("details", FilmDetailsView.as_view(), name="details"),
 
-    # trending-films
-    path("trending", TrendingFilmsView.as_view(), name="trending"),
-
-    # latest-films
-    path("latest", LatestFilmsView.as_view(), name="latest"),
-
-    # Search Api
+    # Search api
     path("search", GlobalSearchListView.as_view(), name="search"),
 
-    # My Titles
-    path("my-titles", MyTitlesView.as_view(), name="my-titles"),
+    # My titles
+    path("my-titles", MyTitlesView.as_view(), name="my_titles"),
     path("my-titles/analytics", MyTitlesAnalyticsView.as_view(), name="my_titles_analytics"),
 
-    # genre list
+    # Genre list
     path("genre", GenreListView.as_view(), name="genre"),
 
 ]

@@ -135,15 +135,6 @@ def cloudinary_webhook(request):
     except Exception as e:
         return JsonResponse({"message": str(e)}, status=400)
 
-# For HLS Testing by Frontend
-def film_detail(request, film_id):
-    """
-    Render film detail page with HLS video player
-    """
-    film = get_object_or_404(Film, id=film_id)
-    return render(request, "movie/film_detail.html", {"film": film})
-
-
     
 class FilmDetailsView(APIView):
     """
