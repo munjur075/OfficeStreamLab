@@ -6,6 +6,7 @@ from django.urls import reverse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction as db_transaction
 
 import paypalrestsdk
 from .models import Wallet, Transaction
@@ -109,17 +110,33 @@ class ExecutePaypalAddFundsView(APIView):
         if payment.execute({"payer_id": payer_id}):
             try:
                 transaction = Transaction.objects.select_related("user").get(txn_id=payment_id)
-                transaction.status = "success"
-                transaction.save()
 
-                # Update wallet balance
-                wallet, _ = Wallet.objects.get_or_create(user=transaction.user)
-                wallet.reel_bux_balance += transaction.amount
-                wallet.save(update_fields=["reel_bux_balance", "updated_at"])
+                # 🔑 Extract PayPal fee details
+                sale = payment.transactions[0].related_resources[0].sale
+                sale_obj = paypalrestsdk.Sale.find(sale.id)
+
+                gross_amount = Decimal(sale_obj.amount["total"])
+                paypal_fee   = Decimal(sale_obj.transaction_fee["value"])
+                net_amount   = gross_amount - paypal_fee
+
+                with db_transaction.atomic():
+                    # Update wallet balance
+                    wallet, _ = Wallet.objects.select_for_update().get_or_create(user=transaction.user)
+                    wallet.reel_bux_balance += net_amount
+                    wallet.save(update_fields=["reel_bux_balance", "updated_at"])
+
+                    # Update transaction record
+                    transaction.status = "completed"
+                    transaction.amount = net_amount  # actual credited amount
+                    transaction.description += f" (Gross: {gross_amount}, Fee: {paypal_fee})"
+                    transaction.save()
 
                 return Response({
                     "status": "success",
-                    "message": f"Added {transaction.amount} {transaction.balance_type} wallet."
+                    "gross_amount": gross_amount,
+                    "paypal_fee": paypal_fee,
+                    "net_amount": net_amount,
+                    "message": f"Added {net_amount} {transaction.balance_type} to wallet."
                 })
 
             except Transaction.DoesNotExist:
