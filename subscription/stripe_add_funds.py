@@ -1,4 +1,5 @@
 import stripe
+from decimal import Decimal
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
@@ -32,7 +33,7 @@ class CreateAddFundsCheckoutSessionView(APIView):
                     "price_data": {
                         "currency": "usd",
                         "product_data": {"name": "Wallet Top-Up"},
-                        "unit_amount": int(float(amount) * 100),  # Stripe expects cents
+                        "unit_amount": int(Decimal(amount) * 100),  # Stripe expects cents
                     },
                     "quantity": 1,
                 }],

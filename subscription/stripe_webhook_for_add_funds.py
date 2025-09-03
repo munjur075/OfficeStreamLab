@@ -36,19 +36,28 @@ class StripeWebhookAddFundsView(APIView):
                 user = User.objects.get(email=email)
                 wallet, _ = Wallet.objects.get_or_create(user=user)
 
-                # Convert to Decimal
-                wallet.reel_bux_balance += Decimal(amount)
+                # 🔑 Retrieve payment info from Stripe
+                payment_intent = stripe.PaymentIntent.retrieve(payment_id)
+                charge = stripe.Charge.retrieve(payment_intent.latest_charge)
+                balance_tx = stripe.BalanceTransaction.retrieve(charge.balance_transaction)
+
+                gross_amount = Decimal(balance_tx.amount) / 100   # what user paid
+                stripe_fee   = Decimal(balance_tx.fee) / 100      # Stripe fee
+                net_amount   = Decimal(balance_tx.net) / 100      # what you actually receive
+
+                # ✅ Credit wallet only with net_amount
+                wallet.reel_bux_balance += net_amount
                 wallet.save(update_fields=["reel_bux_balance", "updated_at"])
 
                 Transaction.objects.create(
                     user=user,
                     source="stripe",
                     tx_type="fund",
-                    amount=Decimal(amount),
+                    amount=net_amount,
                     balance_type="reelbux",
                     status="completed",
                     txn_id=payment_id,
-                    description=f"Wallet top-up via {payment_method}"
+                    description=f"Wallet top-up via {payment_method} (Gross: {gross_amount}, Fee: {stripe_fee})"
                 )
 
                 print(f"✅ Added {amount} to {email}'s wallet")
