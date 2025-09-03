@@ -1,12 +1,13 @@
 from django.urls import path
 from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView, MyLibraryView
+from .film_purchase_reelbux import FilmPurchaseReelBuxView
 
 urlpatterns = [
     # film upload
     path("upload", FilmUploadView.as_view(), name="film_upload"),
 
     # URL to handle Cloudinary webhook notifications
-    path("webhook/cloudinary", cloudinary_webhook, name='cloudinary-webhook'),
+    path("webhook/cloudinary", cloudinary_webhook, name='cloudinary_webhook'),
 
     # ----------- Extra ------------#
     path("views-count", RecordFilmViewAPIView.as_view(), name="views_count"),
@@ -27,6 +28,9 @@ urlpatterns = [
 
     # My library
     path("my-library", MyLibraryView.as_view(), name="my_library"),
+
+    # Film Purchase Using ReelBux
+    path("purchase", FilmPurchaseReelBuxView.as_view(), name="purchase"),
 
     # Genre list
     path("genre", GenreListView.as_view(), name="genre"),

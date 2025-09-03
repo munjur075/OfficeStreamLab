@@ -3,7 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from accounts.models import User
 from movie.models import Film
-
+from decimal import Decimal
 
 # -------------------- WALLET --------------------
 class Wallet(models.Model):
@@ -13,8 +13,9 @@ class Wallet(models.Model):
     - distro_balance: affiliate earnings; can be transferred to ReelBux or withdrawn.
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
-    reel_bux_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    distro_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    reel_bux_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    distro_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -45,6 +46,8 @@ class Transaction(models.Model):
         ("rent", "Rent Film"),
         ("commission", "Distro Commission"),
         ("subscription", "AI Subscription"),
+        ("filmmaker_earning", "Filmmaker Earning"),
+        ("platform_earning", "Platform Earning"),
     ]
 
     BALANCE_CHOICES = [
