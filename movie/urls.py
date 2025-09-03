@@ -1,6 +1,9 @@
 from django.urls import path
 from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView, MyLibraryView
 from .film_purchase_reelbux import FilmPurchaseReelBuxView
+from .film_purchase_paypal import *
+
+app_name = "movie"
 
 urlpatterns = [
     # film upload
@@ -30,9 +33,15 @@ urlpatterns = [
     path("my-library", MyLibraryView.as_view(), name="my_library"),
 
     # Film Purchase Using ReelBux
-    path("purchase", FilmPurchaseReelBuxView.as_view(), name="purchase"),
+    path("reelbux/purchase", FilmPurchaseReelBuxView.as_view(), name="purchase"),
 
     # Genre list
     path("genre", GenreListView.as_view(), name="genre"),
+
+    # ================== PAYPAL ==================
+    # payment (film purchase)
+    path("paypal/create-purchase-checkout", CreatePaypalFilmPurchaseView.as_view(), name="paypal_create_purchase_checkout"),
+    path("paypal/purchase-execute", ExecutePaypalFilmPurchaseView.as_view(), name="paypal_purchase_execute"),
+    path("paypal/purchase-cancel", paypal_film_cancel_view, name="paypal_purchase_cancel"),
 
 ]

@@ -22,7 +22,8 @@ from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
-    path('api/flims/', include('movie.urls')),
+    # path('api/flims/', include('movie.urls')),
+    path('api/flims/', include(('movie.urls', 'movie'), namespace='movie')),
     path('api/payment/', include(('subscription.urls', 'subscription'), namespace='subscription')),
     # path('api/payment/paypal-ipn/', include('paypal.standard.ipn.urls')),
     path('api/reelbux/', include('reelbux.urls')),
