@@ -2,6 +2,7 @@ from django.urls import path
 from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView, MyLibraryView
 from .film_purchase_reelbux import FilmPurchaseReelBuxView
 from .film_purchase_paypal import *
+from .film_rented_paypal import *
 
 app_name = "movie"
 
@@ -43,5 +44,10 @@ urlpatterns = [
     path("paypal/create-purchase-checkout", CreatePaypalFilmPurchaseView.as_view(), name="paypal_create_purchase_checkout"),
     path("paypal/purchase-execute", ExecutePaypalFilmPurchaseView.as_view(), name="paypal_purchase_execute"),
     path("paypal/purchase-cancel", paypal_film_cancel_view, name="paypal_purchase_cancel"),
+
+    # payment (film rented)
+    path("paypal/create-rented-checkout", CreatePaypalFilmRentedView.as_view(), name="paypal_create_rented_checkout"),
+    path("paypal/rented-execute", ExecutePaypalFilmRentedView.as_view(), name="paypal_rented_execute"),
+    path("paypal/rented-cancel", paypal_film_rented_cancel_view, name="paypal_rented_cancel"),
 
 ]
