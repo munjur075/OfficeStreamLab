@@ -3,6 +3,8 @@ from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFi
 from .film_purchase_reelbux import FilmPurchaseReelBuxView
 from .film_purchase_paypal import *
 from .film_rented_paypal import *
+from .film_purchase_stripe import *
+# from .film_purchase_stripe_webhook import *
 
 app_name = "movie"
 
@@ -49,5 +51,13 @@ urlpatterns = [
     path("paypal/create-rented-checkout", CreatePaypalFilmRentedView.as_view(), name="paypal_create_rented_checkout"),
     path("paypal/rented-execute", ExecutePaypalFilmRentedView.as_view(), name="paypal_rented_execute"),
     path("paypal/rented-cancel", paypal_film_rented_cancel_view, name="paypal_rented_cancel"),
+
+    # ================== STRIPE ==================
+    path("stripe/webhook/purchase", StripeWebhookPurchaseView.as_view(), name="stripe_purchase_webhook"),
+
+    # Add funds (wallet top-up)
+    path("stripe/create-purchase-checkout-session", CreateStripePurchaseCheckoutSessionView.as_view(), name="stripe_create_purchase_checkout_session"),
+    path("stripe/checkout-purchase-success", stripe_purchase_checkout_success_view, name="stripe_purchase_checkout_success"),
+    path("stripe/checkout-purchase-cancel", stripe_purchase_checkout_cancel_view, name="stripe_purchase_checkout_cancel"),
 
 ]

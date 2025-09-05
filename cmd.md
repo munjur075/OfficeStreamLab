@@ -8,7 +8,7 @@ stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/subscriptio
 stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/add-funds/
 
 <!--for Film Purchase -->
-stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/purchase
+stripe listen --forward-to localhost:8000/api/flims/stripe/webhook/purchase
 
 # Deploy Static
 ngrok http --url=equal-evidently-terrier.ngrok-free.app 8000
