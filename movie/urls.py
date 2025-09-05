@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView, MyLibraryView
 from .film_purchase_reelbux import FilmPurchaseReelBuxView
-from .film_purchase_paypal import *
+from .paypal_for_film_purchase import *
 from .film_rented_paypal import *
 from .film_purchase_stripe import *
 # from .film_purchase_stripe_webhook import *
