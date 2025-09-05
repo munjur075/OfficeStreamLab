@@ -7,6 +7,9 @@ stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/subscriptio
 <!--for Add Funds -->
 stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/add-funds/
 
+<!--for Film Purchase -->
+stripe listen --forward-to localhost:8000/api/payment/stripe/webhook/purchase
+
 # Deploy Static
 ngrok http --url=equal-evidently-terrier.ngrok-free.app 8000
 
@@ -42,4 +45,5 @@ ngrok http http://localhost:8080
             Q(user=1) & (Q(tx_type='fund') | Q(tx_type='rent'))
         )
 
-    
+card:
+4242 4242 4242 4242
