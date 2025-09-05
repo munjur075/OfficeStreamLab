@@ -3,7 +3,7 @@ from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFi
 from .film_purchase_reelbux import FilmPurchaseReelBuxView
 from .paypal_for_film_purchase import *
 from .paypal_for_film_rented import *
-from .film_purchase_stripe import *
+from .stripe_for_film_purchase import *
 # from .film_purchase_stripe_webhook import *
 
 app_name = "movie"
