@@ -44,7 +44,7 @@ class CreatePaypalFilmRentedView(APIView):
             return Response({"message": "Need rent_price"}, status=400)
 
         try:
-            price = Decimal(price)
+            price = Decimal(price).quantize(Decimal("0.01"))
         except Exception:
             return Response({"message": "Invalid rent_price format"}, status=400)
 
