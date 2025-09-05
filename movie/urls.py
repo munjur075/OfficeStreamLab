@@ -4,7 +4,7 @@ from .reelbux_for_film_purchase import FilmPurchaseReelBuxView
 from .paypal_for_film_purchase import *
 from .paypal_for_film_rented import *
 from .stripe_for_film_purchase import *
-# from .film_purchase_stripe_webhook import *
+from .stripe_for_film_rented import *
 
 app_name = "movie"
 
@@ -53,11 +53,18 @@ urlpatterns = [
     path("paypal/rented-cancel", paypal_film_rented_cancel_view, name="paypal_rented_cancel"),
 
     # ================== STRIPE ==================
+    # webhook
     path("stripe/webhook/purchase", StripeWebhookPurchaseView.as_view(), name="stripe_purchase_webhook"),
+    path("stripe/webhook/rented", StripeWebhookRentedView.as_view(), name="stripe_rented_webhook"),
 
     # Add funds (wallet top-up)
     path("stripe/create-purchase-checkout-session", CreateStripePurchaseCheckoutSessionView.as_view(), name="stripe_create_purchase_checkout_session"),
     path("stripe/checkout-purchase-success", stripe_purchase_checkout_success_view, name="stripe_purchase_checkout_success"),
     path("stripe/checkout-purchase-cancel", stripe_purchase_checkout_cancel_view, name="stripe_purchase_checkout_cancel"),
+
+    # payment (film rented)
+    path("stripe/create-rented-checkout-session", CreateStripeRentedCheckoutSessionView.as_view(), name="stripe_create_rented_checkout_session"),
+    path("stripe/checkout-rented-success", stripe_rented_checkout_success_view, name="stripe_rented_checkout_success"),
+    path("stripe/checkout-rented-cancel", stripe_rented_checkout_cancel_view, name="stripe_rented_checkout_cancel"),
 
 ]
