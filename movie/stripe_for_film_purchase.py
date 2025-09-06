@@ -234,6 +234,11 @@ class StripeWebhookPurchaseView(APIView):
                         description=f"Platform earning for {film.title}"
                     )
 
+                    # ---- Update Film total earning & total buy earning ----
+                    film.total_earning = (film.total_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                    film.total_buy_earning = (film.total_buy_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                    film.save(update_fields=["total_earning", "total_buy_earning"])
+
                 return Response({"status": "success"}, status=200)
 
             except Exception as e:
