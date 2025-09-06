@@ -29,7 +29,7 @@ class CreatePaypalFilmPurchaseView(APIView):
     def post(self, request):
         user = request.user
         film_id = request.data.get("film_id")
-        referral_code = request.data.get("referral_code")
+        referral_code = request.data.get("distro_code")
 
         film = Film.objects.filter(id=film_id).first()
         if not film:

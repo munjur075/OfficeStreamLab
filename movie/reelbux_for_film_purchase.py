@@ -18,7 +18,7 @@ class FilmPurchaseReelBuxView(APIView):
     def post(self, request):
         user = request.user
         film_id = request.data.get("film_id")
-        referral_code = request.data.get("referral_code")  # optional
+        referral_code = request.data.get("distro_code")  # optional
 
         # 0. Get film
         film = Film.objects.filter(id=film_id).first()

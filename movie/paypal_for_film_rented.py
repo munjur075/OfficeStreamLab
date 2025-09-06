@@ -32,7 +32,7 @@ class CreatePaypalFilmRentedView(APIView):
     def post(self, request):
         user = request.user
         film_id = request.data.get("film_id")
-        referral_code = request.data.get("referral_code")
+        referral_code = request.data.get("distro_code")
         price = request.data.get("rent_price")
         rent_hour = request.data.get("rent_hour")
 
