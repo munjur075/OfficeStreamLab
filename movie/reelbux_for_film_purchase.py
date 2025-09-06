@@ -35,7 +35,7 @@ class FilmPurchaseReelBuxView(APIView):
             return Response({"message": "Platform user not configured"}, status=500)
 
         # Generate unique transaction ID
-        txn_id = f"buy_{uuid.uuid4().hex[:12]}"
+        txn_id = f"buy_{uuid.uuid4().hex[:16]}"
 
         try:
             with transaction.atomic():
@@ -64,6 +64,19 @@ class FilmPurchaseReelBuxView(APIView):
                     start_date=timezone.now(),
                     end_date=None,  # lifetime
                     status="active"
+                )
+                
+                # ---- Buyer transaction log ----
+                Transaction.objects.create(
+                    user=user,
+                    film=film,
+                    source="reelbux",
+                    tx_type="purchase",
+                    amount=price,
+                    txn_id=txn_id,
+                    balance_type="reelbux",
+                    status="completed",
+                    description=f"Debit {price} ReelBux for film purchase",
                 )
 
                 # 3. Revenue split
@@ -132,18 +145,10 @@ class FilmPurchaseReelBuxView(APIView):
                     description=f"Platform earning for film {film.title}",
                 )
 
-                # ---- Buyer transaction log ----
-                Transaction.objects.create(
-                    user=user,
-                    film=film,
-                    source="reelbux",
-                    tx_type="purchase",
-                    amount=price,
-                    txn_id=txn_id,
-                    balance_type="reelbux",
-                    status="completed",
-                    description=f"Debit {price} ReelBux for film purchase",
-                )
+                # ---- Update Film total earning & total buy earning ----
+                film.total_earning = (film.total_earning or Decimal("0.00")) + price.quantize(Decimal("0.00"))
+                film.total_buy_earning = (film.total_buy_earning or Decimal("0.00")) + price.quantize(Decimal("0.00"))
+                film.save(update_fields=["total_earning", "total_buy_earning"])
 
         except Exception as e:
             return Response({"message": "Purchase failed", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

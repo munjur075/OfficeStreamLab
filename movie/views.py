@@ -439,7 +439,8 @@ class MyTitlesView(APIView):
 
     def get(self, request):
         user = request.user
-        my_titles = Film.objects.filter(filmmaker=user)
+        # print(user)
+        my_titles = Film.objects.filter(filmmaker=user).order_by("-created_at")
 
         # ---- Stats ----
         stats = {
