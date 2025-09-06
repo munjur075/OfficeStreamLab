@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import FilmUploadView, cloudinary_webhook, FilmDetailsView, RecordFilmViewAPIView, RecordWatchTimeAPIView, TrendingFilmsView, LatestFilmsView, MyTitlesView, MyTitlesAnalyticsView, GenreListView, GlobalSearchListView, MyLibraryView
-from .reelbux_for_film_purchase import FilmPurchaseReelBuxView
+from .reelbux_for_film_purchase import *
+from .reelbux_for_film_rented import *
 from .paypal_for_film_purchase import *
 from .paypal_for_film_rented import *
 from .stripe_for_film_purchase import *
@@ -35,11 +36,15 @@ urlpatterns = [
     # My library
     path("my-library", MyLibraryView.as_view(), name="my_library"),
 
-    # Film Purchase Using ReelBux
-    path("reelbux/purchase", FilmPurchaseReelBuxView.as_view(), name="purchase"),
-
     # Genre list
     path("genre", GenreListView.as_view(), name="genre"),
+
+    # ================== ReelBux ==================
+    # payment (film purchase)
+    path("reelbux/purchase", FilmPurchaseReelBuxView.as_view(), name="purchase"),
+
+    # payment (film rented)
+    path("reelbux/rented", FilmRentedReelBuxView.as_view(), name="rented"),
 
     # ================== PAYPAL ==================
     # payment (film purchase)
