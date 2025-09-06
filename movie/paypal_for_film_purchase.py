@@ -227,6 +227,11 @@ class ExecutePaypalFilmPurchaseView(APIView):
                     transaction_obj.description = f"Paid {price} USD for {film.title} (PayPal fee: {paypal_fee})"
                     transaction_obj.save(update_fields=["amount", "status", "description"])
 
+                    # ---- Update Film total earning & total buy earning ----
+                    film.total_earning = (film.total_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                    film.total_buy_earning = (film.total_buy_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                    film.save(update_fields=["total_earning", "total_buy_earning"])
+
             except Exception as e:
                 return Response({"message": "Failed to record purchase", "error": str(e)}, status=500)
 
