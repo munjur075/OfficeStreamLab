@@ -683,8 +683,8 @@ class MyLibraryView(APIView):
                 progress_percent = 100.0
 
             data.append({
-                "title": t.film.title,
                 "film_id": t.film.id,
+                "title": t.film.title,
                 "film_type": t.film.get_film_type_display(),
                 "full_film_duration": t.film.full_film_duration,
                 "access_type": "Purchase" if t.access_type == "Buy" else "Rented",
@@ -692,10 +692,21 @@ class MyLibraryView(APIView):
                 "expiry_time": t.end_date if t.access_type == "Rent" else None,
                 "thumbnail": t.film.thumbnail.url if t.film.thumbnail else None,
                 "film_hls_url": None if t.status == "Expired" else t.film.film_hls_url,
-                "watch_progress": progress_percent
+                "watch_progress": progress_percent,
+                "current_watch_time":current_watch_time
             })
 
-        return paginator.get_paginated_response({
+        # return paginator.get_paginated_response({
+        #     "status": "success",
+        #     "message": "My titles fetched successfully",
+        #     "stats": stats,
+        #     "data": data
+        # })
+        
+        return Response({
+            "count": paginator.page.paginator.count,
+            "next": paginator.get_next_link(),
+            "previous": paginator.get_previous_link(),
             "status": "success",
             "message": "My titles fetched successfully",
             "stats": stats,
