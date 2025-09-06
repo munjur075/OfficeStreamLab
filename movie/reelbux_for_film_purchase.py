@@ -35,7 +35,7 @@ class FilmPurchaseReelBuxView(APIView):
             return Response({"message": "Platform user not configured"}, status=500)
 
         # Generate unique transaction ID
-        txn_id = f"buy_{uuid.uuid4().hex[:16]}"
+        txn_id = f"buy_{uuid.uuid4().hex[:12]}"
 
         try:
             with transaction.atomic():
