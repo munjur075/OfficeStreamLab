@@ -588,8 +588,8 @@ class MyTitlesAnalyticsView(APIView):
         return Response({
             "film": film.title,
             "total_views": total_views,
-            "unique_viewers": unique_viewers,
             "total_earning": float(total_earning),
+            "unique_viewers": unique_viewers,
             "daily_views": daily_views,
             "weekly_earnings": weekly_earnings,
             "average_watch_time_seconds": round(average_watch_time, 2),
