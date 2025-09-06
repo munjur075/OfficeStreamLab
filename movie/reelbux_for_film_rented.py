@@ -157,6 +157,10 @@ class FilmRentedReelBuxView(APIView):
                     status="completed",
                     description=f"Platform earning for film {film.title}",
                 )
+                # ---- Update Film total earning & total rent earning ----
+                film.total_earning = (film.total_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                film.total_rent_earning = (film.total_rent_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                film.save(update_fields=["total_earning", "total_rent_earning"])
 
         except Exception as e:
             return Response({"message": "Rented failed", "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
