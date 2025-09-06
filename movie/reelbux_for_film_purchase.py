@@ -146,8 +146,8 @@ class FilmPurchaseReelBuxView(APIView):
                 )
 
                 # ---- Update Film total earning & total buy earning ----
-                film.total_earning = (film.total_earning or Decimal("0.00")) + price.quantize(Decimal("0.00"))
-                film.total_buy_earning = (film.total_buy_earning or Decimal("0.00")) + price.quantize(Decimal("0.00"))
+                film.total_earning = (film.total_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
+                film.total_buy_earning = (film.total_buy_earning or Decimal("0.00")) + filmmaker_share.quantize(Decimal("0.00"))
                 film.save(update_fields=["total_earning", "total_buy_earning"])
 
         except Exception as e:
