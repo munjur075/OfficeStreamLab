@@ -281,11 +281,14 @@ class RecordWatchTimeAPIView(APIView):
         # Update FilmView for this viewer and film (latest entry)
         last_film_view = FilmView.objects.filter(film=film, viewer=viewer).order_by('-viewed_at').first()
         if last_film_view:
+            # Add to total watch_time
             last_film_view.watch_time = F("watch_time") + watch_time
-            last_film_view.save(update_fields=["watch_time"])
+            # Update current session watch time
+            last_film_view.carrent_watch_time = watch_time
+            last_film_view.save(update_fields=["watch_time", "carrent_watch_time"])
         else:
             # If no FilmView exists, create one
-            FilmView.objects.create(film=film, viewer=viewer, watch_time=watch_time)
+            FilmView.objects.create(film=film, viewer=viewer, watch_time=watch_time, carrent_watch_time=watch_time)
 
         # Update FilmPlayView for this viewer and film (latest entry)
         last_play_view = FilmPlayView.objects.filter(film=film, viewer=viewer).order_by('-viewed_at').first()
@@ -631,45 +634,55 @@ class GlobalSearchListView(APIView):
 # -------------------------------------M.Alom----------------------------------
 # My Library
 from .models import MyFilms
+from django.utils import timezone
+
 class MyLibraryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        now = timezone.now()
+
+        # ---- Auto-expire rentals ----
+        MyFilms.objects.filter(
+            user=user, access_type="Rent", end_date__lt=now, status="active"
+        ).update(status="Expired")
+
         my_library = MyFilms.objects.filter(user=user)
 
-        # ---- Stats ----
+        # ---- Stats ---- (only active)
         stats = {
-            "total_buy": my_library.filter(access_type__iexact="Buy").count(),
-            "total_rent": my_library.filter(access_type__iexact="Rent").count(),
+            "total_buy": my_library.filter(access_type__iexact="Buy", status__iexact="active").count(),
+            "total_rent": my_library.filter(access_type__iexact="Rent", status__iexact="active").count(),
         }
-
         # ---- Filters ----
         access_type_param = request.GET.get("access_type")
-
         if access_type_param:
             my_library = my_library.filter(access_type__iexact=access_type_param)
 
         # ---- Search ----
         search_param = request.GET.get("search")
         if search_param:
-            my_library = my_library.filter(Q(title__icontains=search_param))
+            my_library = my_library.filter(film__title__icontains=search_param)
 
         # ---- Pagination ----
         paginator = MyPagination()
         result_page = paginator.paginate_queryset(my_library, request)
 
-        data = [
-            {
-                "title": t.title,
-                "status": t.get_status_display(),
-                "film_type": t.get_film_type_display(),
-                "views": t.total_views,
-                "total_earning": t.total_earning
-            }
-            for t in result_page
-        ]
-        
+        data = []
+        for t in result_page:
+            data.append({
+                "title": t.film.title,
+                "film_id": t.film.id,
+                "film_type": t.film.get_film_type_display(),
+                "full_film_duration": t.film.full_film_duration,
+                "access_type": "Purchase" if t.access_type == "Buy" else "Rented",
+                "status": t.status,
+                "expiry_time": t.end_date if t.access_type == "Rent" else None,
+                "thumbnail": t.film.thumbnail.url if t.film.thumbnail else None,
+                "film_hls_url": None if t.status == "Expired" else t.film.film_hls_url,
+            })
+
         return paginator.get_paginated_response({
             "status": "success",
             "message": "My titles fetched successfully",

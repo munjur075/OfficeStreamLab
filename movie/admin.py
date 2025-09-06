@@ -17,7 +17,7 @@ class FilmPlayViewAdmin(admin.ModelAdmin):
     list_display =('id', 'film', 'viewer')
 
 class MyFilmsAdmin(admin.ModelAdmin):
-    list_display =('user', 'film', 'access_type', 'start_date', 'end_date')
+    list_display =('user', 'film', 'access_type', 'start_date', 'end_date', 'status')
 
 # Register models in the admin interface
 admin.site.register(Film, FilmAdmin)

@@ -100,6 +100,7 @@ class FilmView(models.Model):
     viewer = models.ForeignKey(User, on_delete=models.CASCADE)
     viewed_at = models.DateTimeField(auto_now_add=True)
     watch_time = models.PositiveIntegerField(default=0)  # new field to track watch time
+    carrent_watch_time = models.PositiveIntegerField(default=0)  # new field to track carrent watch time per_film_per_user
 
     #
     
