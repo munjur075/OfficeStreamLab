@@ -284,11 +284,11 @@ class RecordWatchTimeAPIView(APIView):
             # Add to total watch_time
             last_film_view.watch_time = F("watch_time") + watch_time
             # Update current session watch time
-            last_film_view.carrent_watch_time = watch_time
-            last_film_view.save(update_fields=["watch_time", "carrent_watch_time"])
+            last_film_view.current_watch_time = watch_time
+            last_film_view.save(update_fields=["watch_time", "current_watch_time"])
         else:
             # If no FilmView exists, create one
-            FilmView.objects.create(film=film, viewer=viewer, watch_time=watch_time, carrent_watch_time=watch_time)
+            FilmView.objects.create(film=film, viewer=viewer, watch_time=watch_time, current_watch_time=watch_time)
 
         # Update FilmPlayView for this viewer and film (latest entry)
         last_play_view = FilmPlayView.objects.filter(film=film, viewer=viewer).order_by('-viewed_at').first()
@@ -655,6 +655,7 @@ class MyLibraryView(APIView):
             "total_buy": my_library.filter(access_type__iexact="Buy", status__iexact="active").count(),
             "total_rent": my_library.filter(access_type__iexact="Rent", status__iexact="active").count(),
         }
+
         # ---- Filters ----
         access_type_param = request.GET.get("access_type")
         if access_type_param:
@@ -671,6 +672,16 @@ class MyLibraryView(APIView):
 
         data = []
         for t in result_page:
+            # Get last watched record for this user & film
+            last_film_view = FilmView.objects.filter(film=t.film, viewer=user).first()
+            current_watch_time = last_film_view.current_watch_time if last_film_view else 0
+
+            full_duration = t.film.full_film_duration or 1  # avoid division by zero
+            progress_percent = round((current_watch_time / full_duration) * 100, 2)
+            # cap at 100%
+            if progress_percent > 100:
+                progress_percent = 100.0
+
             data.append({
                 "title": t.film.title,
                 "film_id": t.film.id,
@@ -681,6 +692,7 @@ class MyLibraryView(APIView):
                 "expiry_time": t.end_date if t.access_type == "Rent" else None,
                 "thumbnail": t.film.thumbnail.url if t.film.thumbnail else None,
                 "film_hls_url": None if t.status == "Expired" else t.film.film_hls_url,
+                "watch_progress": progress_percent
             })
 
         return paginator.get_paginated_response({
