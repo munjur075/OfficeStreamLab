@@ -646,9 +646,9 @@ class MyLibraryView(APIView):
         # ---- Auto-expire rentals ----
         MyFilms.objects.filter(
             user=user, access_type="Rent", end_date__lt=now, status="active"
-        ).update(status="Expired")
+        ).update(status="expired")
 
-        my_library = MyFilms.objects.filter(user=user)
+        my_library = MyFilms.objects.filter(user=user, status__iexact="active").order_by("-start_date")
 
         # ---- Stats ---- (only active)
         stats = {

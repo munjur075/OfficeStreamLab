@@ -149,7 +149,8 @@ class MyFilms(models.Model):
     class Meta:
         verbose_name = "My Film"
         verbose_name_plural = "My Films"
-        unique_together = ("user", "film", "access_type")
+        # unique_together = ("user", "film", "access_type")
+        ordering = ["-start_date"]  # ✅ Ensures stable ordering for pagination
 
     def save(self, *args, **kwargs):
         # Fix: rental_hours is in hours, use timedelta(hours=...)
