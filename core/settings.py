@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'movie',
     'subscription',
     'reelbux',
+    'distro',
 ]
 
 # CustomUser Model
@@ -224,6 +225,6 @@ PAYPAL_CLIENT_ID = "ASz00DmJkxuQ75fQEuifFOdsCQth58evy6G82OqMuvXq8IEysYI28wWftFKD
 PAYPAL_CLIENT_SECRET = "EK3qr2n7kBdljYjLaVVNNKcHxzpu8S9sX0lkh4eYLtWUSf30cN04gkkv3DTi_waqyw3-5TKhBlW8xJZs"
 
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://equal-evidently-terrier.ngrok-free.app',
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://equal-evidently-terrier.ngrok-free.app',
+# ]
