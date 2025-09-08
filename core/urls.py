@@ -28,4 +28,5 @@ urlpatterns = [
     # path('api/payment/paypal-ipn/', include('paypal.standard.ipn.urls')),
     path('api/reelbux/', include('reelbux.urls')),
     path('api/distro/', include('distro.urls')),
+    path('api/admin/', include('adminpanel.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
