@@ -7,7 +7,7 @@ from django.db.models import Q, Sum
 from accounts.models import User
 from movie.models import Film
 from .serializers import ManageUserSerializer
-
+from subscription.models import UserSubscription
 
 class UserManagementView(APIView):
     permission_classes = [IsAdminUser]  # Only admins can access
@@ -141,3 +141,78 @@ class AdminFilmsView(APIView):
     #             "status": "error",
     #             "message": "Film not found"
     #         }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+# Subscriber Management
+class SubscriptionManagementView(APIView):
+    """
+    Admin view to list/manage active subscriptions without serializer.
+    Supports optional search by full_name or email.
+    """
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        search_query = request.GET.get("search", "").strip()
+
+        # Optimize query with select_related to avoid N+1 queries
+        subscribers = UserSubscription.objects.filter(status="active").select_related("user")
+
+        # Apply search filter
+        if search_query:
+            subscribers = subscribers.filter(
+                Q(user__full_name__icontains=search_query) |
+                Q(user__email__icontains=search_query)
+            )
+
+        total_subscriber = subscribers.count()
+
+        # Only select required fields for performance
+        subscriber_list = [
+            {
+                "subscriber_id": sub.id,
+                "full_name": sub.user.full_name,
+                "email": sub.user.email,
+                "plan_name": sub.plan_name,
+                "current_period_start": sub.current_period_start.date(),
+            }
+            for sub in subscribers
+        ]
+
+        return Response({
+            "status": "success",
+            "message": "Subscribers fetched successfully",
+            "total_subscriber": total_subscriber,
+            "subscribers": subscriber_list
+        })
+
+    def delete(self, request):
+        subscriber_id = request.GET.get("subscriber_id", "").strip()
+        if not subscriber_id:
+            return Response({
+                "status": "error",
+                "message": "Subscriber ID is required"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Fetch subscription along with user
+            subscriber = UserSubscription.objects.select_related("user").get(
+                id=subscriber_id, status="active"
+            )
+        except UserSubscription.DoesNotExist:
+            return Response({
+                "status": "error",
+                "message": "Subscription not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Update user is_subscribe to False before deleting subscription
+        subscriber.user.is_subscribe = False
+        subscriber.user.save(update_fields=["is_subscribe"])
+
+        user_name = subscriber.user.full_name
+        subscriber.delete()
+
+        return Response({
+            "status": "success",
+            "message": f"Subscription deleted successfully for {user_name} and user unsubscribed"
+        })
