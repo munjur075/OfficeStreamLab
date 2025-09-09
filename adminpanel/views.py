@@ -115,27 +115,29 @@ class AdminFilmsView(APIView):
         })
 
 
-    # # DELETE: remove a user by ID (only non-admin users)
+    # # DELETE: Film
     # def delete(self, request):
-    #     user_id_param = request.GET.get("user_id", "").strip()
+    #     film_id_param = request.GET.get("film_id", "").strip()
 
-    #     # user_id_param = request.data.get("user_id").strip()
-    #     if not user_id_param:
+    #     if not film_id_param:
     #         return Response({
     #             "status": "error",
-    #             "message": "User ID is required"
+    #             "message": "Film ID is required"
     #         }, status=status.HTTP_400_BAD_REQUEST)
 
     #     try:
-    #         # Exclude admin to prevent accidental deletion
-    #         user = User.objects.exclude(role="admin").get(id=user_id_param)
-    #         user.delete()
+    #         # Fetch the film
+    #         film = Film.objects.get(id=film_id_param)
+    #         title = film.title  # save before deleting
+    #         film.delete()
+
     #         return Response({
     #             "status": "success",
-    #             "message": f"User {user.full_name} deleted successfully"
+    #             "message": f"Film '{title}' deleted successfully"
     #         })
-    #     except User.DoesNotExist:
+
+    #     except Film.DoesNotExist:
     #         return Response({
     #             "status": "error",
-    #             "message": "User not found"
+    #             "message": "Film not found"
     #         }, status=status.HTTP_404_NOT_FOUND)

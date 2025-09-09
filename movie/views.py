@@ -9,7 +9,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404, render
 from rest_framework.permissions import IsAuthenticated
 from .models import Film, Genre, FilmView, FilmPlayView
-from .serializers import FilmSerializer, FilmListSerializer, GenreSerializer
+from .serializers import FilmSerializer, GenreSerializer
 from datetime import date, timedelta
 from django.db.models import Sum
 from subscription.models import Transaction
@@ -40,13 +40,14 @@ class FilmUploadView(APIView):
                 folder="thumbnails/"
             )
             thumbnail_url = thumbnail_result.get("secure_url")
+            thumbnail_public_id = thumbnail_result.get("public_id")  # Store public_id for deletion
 
             # 2️⃣ Upload trailer (multi-bitrate HLS)
             trailer_result = cloudinary.uploader.upload_large(
                 file=trailer_file,
                 resource_type="video",
                 folder="trailers/",
-                eager=[{'format': 'hls'}],  # Multi-bitrate HLS
+                eager=[{'format': 'hls'}],
                 eager_async=True
             )
             trailer_public_id = trailer_result.get("public_id")
@@ -57,7 +58,7 @@ class FilmUploadView(APIView):
                 file=full_film_file,
                 resource_type="video",
                 folder="full_films/",
-                eager=[{'format': 'hls'}],  # Multi-bitrate HLS
+                eager=[{'format': 'hls'}],
                 eager_async=True
             )
             full_film_public_id = full_film_result.get("public_id")
@@ -74,6 +75,7 @@ class FilmUploadView(APIView):
                 buy_price=buy_price,
                 filmmaker=request.user,
                 thumbnail=thumbnail_url,
+                thumbnail_public_id=thumbnail_public_id,
                 trailer_public_id=trailer_public_id,
                 full_film_public_id=full_film_public_id,
                 trailer_hls_url=trailer_hls_url,
@@ -94,24 +96,19 @@ class FilmUploadView(APIView):
         except Exception as e:
             return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
 @csrf_exempt
 def cloudinary_webhook(request):
     """
     Updates HLS URLs and duration after Cloudinary finishes processing large videos.
-    Ensures multi-resolution streaming works in production.
     """
     if request.method != "POST":
         return JsonResponse({"message": "Invalid method"}, status=400)
 
     try:
         payload = json.loads(request.body)
-        print(payload)
         public_id = payload.get("public_id")
         resource_type = payload.get("resource_type")
         duration = payload.get("duration")
-        eager_process = payload.get("eager")
-        print("egar process start:",eager_process)
 
         film = None
         if Film.objects.filter(trailer_public_id=public_id).exists():
@@ -126,7 +123,6 @@ def cloudinary_webhook(request):
             if duration:
                 film.full_film_duration = duration
 
-            # Master HLS URL for adaptive streaming
             film.film_hls_url = f"https://res.cloudinary.com/{cloudinary.config().cloud_name}/video/upload/{public_id}.m3u8"
 
         film.save()
@@ -135,7 +131,8 @@ def cloudinary_webhook(request):
     except Exception as e:
         return JsonResponse({"message": str(e)}, status=400)
 
-    
+
+# 
 class FilmDetailsView(APIView):
     """
     Returns details of a specific published film by its ID, 

@@ -22,10 +22,17 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
+# cloudinary.config( 
+#   cloud_name = "dubsxif8w",
+#   api_key = "344857482292291",
+#   api_secret = "w_HqV196OdrQZYs7LGzQUFFOsBc",
+#   secure = True
+# )
+
 cloudinary.config( 
-  cloud_name = "dubsxif8w",
-  api_key = "344857482292291",
-  api_secret = "w_HqV196OdrQZYs7LGzQUFFOsBc",
+  cloud_name = "dvyff8deo",
+  api_key = "648848566517129",
+  api_secret = "U1xOQXN7MEJGJBKktKw73-Z9sGg",
   secure = True
 )
 
@@ -199,9 +206,9 @@ CSRF_TRUSTED_ORIGINS = ['https://equal-evidently-terrier.ngrok-free.app']
 #---------
 # Cloudinary credentials
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dubsxif8w',
-    'API_KEY': '344857482292291',
-    'API_SECRET': 'w_HqV196OdrQZYs7LGzQUFFOsBc',
+    'CLOUD_NAME': 'dvyff8deo',
+    'API_KEY': '648848566517129',
+    'API_SECRET': 'U1xOQXN7MEJGJBKktKw73-Z9sGg',
 }
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

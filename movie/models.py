@@ -49,6 +49,7 @@ class Film(models.Model):
     trailer = CloudinaryField(resource_type="video", folder="trailers", blank=True, null=True)
     full_film = CloudinaryField(resource_type="video", folder="full_films", blank=True, null=True)
 
+    thumbnail_public_id = models.CharField(max_length=255, blank=True, null=True)
     trailer_public_id = models.CharField(max_length=255, blank=True, null=True)
     full_film_public_id = models.CharField(max_length=255, blank=True, null=True)
 
