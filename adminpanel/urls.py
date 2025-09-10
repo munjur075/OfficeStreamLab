@@ -3,6 +3,7 @@ from .views import UserManagementView, AdminFilmsView, SubscriptionManagementVie
 from .film_delete import *
 from .film_approve_reject import *
 from .distro_reports import *
+from .payments_overview import *
 
 urlpatterns = [
     #1 Admin Dashboard
@@ -15,6 +16,9 @@ urlpatterns = [
     path('films', AdminFilmsView.as_view(), name='films'),
     path('films-delete', FilmDeleteView.as_view(), name='films_delete'),
     path('films-approve-reject', FilmApproveRejectView.as_view(), name='films_approve_reject'),
+
+    #4 Payments
+    path('payments-overview', FilmTransactionOverview.as_view(), name='payments_overview'),
 
     #5 Distro
     path('distro-report', FilmDistroReportView.as_view(), name='distro_report'),
